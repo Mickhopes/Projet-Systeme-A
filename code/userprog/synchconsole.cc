@@ -29,10 +29,10 @@ void SynchConsole::SynchPutChar(const char ch)
 	writeDone->P();
 }
 
-char SynchConsole::SynchGetChar()
+int SynchConsole::SynchGetChar()
 {
 	readAvail->P();
-	return console->GetChar();
+	return (int)console->GetChar();
 }
 
 void SynchConsole::SynchPutString(const char s[])
@@ -45,5 +45,30 @@ void SynchConsole::SynchPutString(const char s[])
 
 void SynchConsole::SynchGetString(char *s, int n)
 {
-	
+	int i;
+	for(i = 0; i < n; i++) {
+		s[i] = (char)SynchGetChar();
+		if (s[i] == '\n') {
+			s[i+1] = '\0';
+			break;
+		} else if (s[i] == EOF){
+			s[i] = '\0';
+			break;
+		}
+	}
+}
+
+void SynchConsole::SynchPutInt(int n)
+{
+	char buff[MAX_STRING_SIZE];
+	sprintf(buff, "%d", n);
+	SynchPutString(buff);
+}
+
+int SynchConsole::SynchGetInt() {
+	int ret;
+	char buff[MAX_STRING_SIZE];
+	SynchGetString(buff, MAX_STRING_SIZE-1);
+	sscanf(buff, "%d", &ret);
+	return ret;
 }

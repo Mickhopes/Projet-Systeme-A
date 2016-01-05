@@ -85,6 +85,17 @@ ExceptionHandler (ExceptionType which)
     // End of addition
 }*/
 
+void copyStringFromMachine(int from, char* to, unsigned int size) {
+	unsigned int i = 0;
+	for(i = 0; i < size; i++) {
+		int c;
+		machine->ReadMem(from+i, 1, &c);
+		to[i] = (char) c;
+	}
+
+	to[size+1] = '\0';
+}
+
 void
 ExceptionHandler(ExceptionType which)
 {
@@ -102,7 +113,7 @@ ExceptionHandler(ExceptionType which)
 				break;
 			}
 			case SC_GetChar: {
-				char c = synchconsole->SynchGetChar();
+				char c = (char)synchconsole->SynchGetChar();
 				if (c == EOF) {
 					DEBUG('a', "Shutdown, EOF in GetChar detected.\n");
 					interrupt->Halt(); // If EOF, we stop the program
@@ -113,12 +124,32 @@ ExceptionHandler(ExceptionType which)
 			}
 			case SC_PutString: {
 				int mips_pointer = machine->ReadRegister(4); // We get the MIPS pointer to the string in argument
-				char* linux_pointer;
-				// TODO: Appeler la fonction copyStringFromMachine
+				char linux_pointer[MAX_STRING_SIZE];
+				copyStringFromMachine(mips_pointer, linux_pointer, MAX_STRING_SIZE-1);
 				synchconsole->SynchPutString(linux_pointer);
 				break;
 			}
 			case SC_GetString: {
+				char buff[MAX_STRING_SIZE];
+				synchconsole->SynchGetString(buff, MAX_STRING_SIZE-1);
+
+				machine->WriteRegister(2, 0);
+				break;
+			}
+			case SC_PutInt: {
+				int n = machine->ReadRegister(4);
+				synchconsole->SynchPutInt(n);
+				break;
+			}
+			case SC_GetInt: {
+				int n = synchconsole->SynchGetInt();
+				machine->WriteRegister(2, n);
+				break;
+			}
+			case SC_Exit: {
+				int ret = machine->ReadRegister(4);
+				printf("Return Value of main: %d\n", ret);
+				interrupt->Halt();
 				break;
 			}
 			default: {

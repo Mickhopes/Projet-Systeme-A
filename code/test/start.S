@@ -1,7 +1,7 @@
 /* Start.s 
  *	Assembly language assist for user programs running on top of Nachos.
  *
- *	Since we don't want to pull in the entire C library, we define
+ *	Since we don t want to pull in the entire C library, we define
  *	what we need for a user program here, namely Start and the system
  *	calls.
  */
@@ -24,7 +24,7 @@
 	.ent	__start
 __start:
 	jal	main
-	move	$4,$0		
+	move	$4,$2		
 	jal	Exit	 /* if we return from main, exit(0) */
 	.end __start
 
@@ -160,6 +160,22 @@ GetString:
 	syscall
 	j	$31
 	.end GetString
+
+	.globl PutInt
+	.ent	PutInt
+PutInt:
+	addiu $2,$0,SC_PutInt
+	syscall
+	j	$31
+	.end PutInt
+
+	.globl GetInt
+	.ent	GetInt
+GetInt:
+	addiu $2,$0,SC_GetInt
+	syscall
+	j	$31
+	.end GetInt
 
 /* dummy function to keep gcc happy */
         .globl  __main

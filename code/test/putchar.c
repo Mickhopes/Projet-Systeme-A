@@ -13,5 +13,6 @@ int
 main()
 {
     print('a', 4);
-    Halt();
+
+    return 0;
 }
