@@ -85,11 +85,43 @@ ConsoleTest (char *in, char *out)
 
     for (;;)
       {
-	  readAvail->P ();	// wait for character to arrive
-	  ch = console->GetChar ();
-	  console->PutChar (ch);	// echo it!
-	  writeDone->P ();	// wait for write to finish
-	  if (ch == 'q')
-	      return;		// if q, quit
-      }
+	  	readAvail->P ();	// wait for character to arrive
+	  	ch = console->GetChar ();
+		if (ch != EOF) {
+			if (ch != '\n') {
+				console->PutChar ('<');
+				writeDone->P ();
+			}
+
+			console->PutChar (ch);	// echo it!
+			writeDone->P ();
+
+			if (ch != '\n') {
+				console->PutChar ('>');
+				writeDone->P ();
+			}
+		}
+		if (ch == 'q' || ch == EOF)
+			return;		// if q, EOF quit
+	  }
+}
+
+void
+SynchConsoleTest (char *in, char *out)
+{
+	char ch;
+	SynchConsole *synchcons = new SynchConsole(in, out);
+	while ((ch = synchcons->SynchGetChar()) != EOF)
+	{
+		if (ch != '\n') {
+			synchcons->SynchPutChar('<');
+		}
+
+		synchcons->SynchPutChar(ch);
+
+		if (ch != '\n') {
+			synchcons->SynchPutChar('>');
+		}
+	}
+	fprintf(stderr, "Solaris: EOF detected in SynchConsole!\n");
 }
