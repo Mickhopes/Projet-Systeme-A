@@ -90,15 +90,35 @@ ExceptionHandler(ExceptionType which)
 {
 	int type = machine->ReadRegister(2);
 	if (which == SyscallException) {
-		switch (type) {
+		switch (type) { // Type correspond to the type of system call
 			case SC_Halt: {
 				DEBUG('a', "Shutdown, initiated by user program.\n");
 				interrupt->Halt();
 				break;
 			}
 			case SC_PutChar: {
-				char c = (char)machine->ReadRegister(4);
+				char c = (char)machine->ReadRegister(4); // We get the first argument
 				synchconsole->SynchPutChar(c);
+				break;
+			}
+			case SC_GetChar: {
+				char c = synchconsole->SynchGetChar();
+				if (c == EOF) {
+					DEBUG('a', "Shutdown, EOF in GetChar detected.\n");
+					interrupt->Halt(); // If EOF, we stop the program
+				} else {
+					machine->WriteRegister(2, (int)c); // If not we write the return value in the second register
+				}
+				break;
+			}
+			case SC_PutString: {
+				int mips_pointer = machine->ReadRegister(4); // We get the MIPS pointer to the string in argument
+				char* linux_pointer;
+				// TODO: Appeler la fonction copyStringFromMachine
+				synchconsole->SynchPutString(linux_pointer);
+				break;
+			}
+			case SC_GetString: {
 				break;
 			}
 			default: {
