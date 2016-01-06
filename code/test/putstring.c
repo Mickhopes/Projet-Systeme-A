@@ -3,7 +3,10 @@
 int
 main()
 {
-    PutString("coucou\0kjgrkjdrgkvrejhgoieurhguioer");
-    PutString("\nc");
-    Halt();
+    char chaine[10];
+    GetString(chaine,9);
+    PutString("Result : ");
+    PutString(chaine);
+    PutString("\n");
+    return 0;
 }
