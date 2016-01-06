@@ -35,6 +35,8 @@
 #define	SC_GetString 14
 #define SC_PutInt	 15
 #define SC_GetInt	 16
+#define SC_UserThreadCreate 17
+#define SC_UserThreadExit 18
 
 #ifdef IN_USER_MODE
 
@@ -151,6 +153,12 @@ void PutInt(int n);
 
 /* read the int from the standard input */
 int GetInt();
+
+/* Create a new user thread */
+int UserThreadCreate(void f(void *arg), void *arg);
+
+/* Exit the user thread */
+void UserThreadExit();
 
 #endif // IN_USER_MODE
 

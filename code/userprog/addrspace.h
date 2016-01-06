@@ -14,9 +14,18 @@
 #define ADDRSPACE_H
 
 #include "copyright.h"
+#include "synch.h"
 #include "filesys.h"
 
 #define UserStackSize		1024	// increase this as necessary!
+
+#define MaxUserThreads  4 // TODO: calculer le nombre de threads user possible. genre (taille de l'espace d'adressage - taille main) / UserStackSize
+
+// Structure for keeping track of used IDs
+struct ThreadId {
+  unsigned int id;
+  struct ThreadId *next;
+};
 
 class AddrSpace
 {
@@ -30,13 +39,26 @@ class AddrSpace
     // before jumping to user code
 
     void SaveState ();		// Save/restore address space-specific
-    void RestoreState ();	// info on a context switch 
+    void RestoreState ();	// info on a context switch
+
+    // Add the user thread to the ID list and increment nbThread
+    // Return the adress of a stack space for the user thread
+    // or -1 if there isn't any space available
+    // This function set the thread's ID
+    int FindUserThreadSpace (unsigned int *threadId);
+
+    // Remove the user thread to the ID list and decrement nbThread
+    void RemoveUserThread (unsigned int threadId);
 
   private:
       TranslationEntry * pageTable;	// Assume linear page table translation
     // for now!
     unsigned int numPages;	// Number of pages in the virtual 
     // address space
+
+    struct ThreadId *IDList;  // Pointer to the beginning of the ID list
+    unsigned int nbThreads; // Number of running user threads
+    Semaphore *mutex; // Mutex
 };
 
 #endif // ADDRSPACE_H

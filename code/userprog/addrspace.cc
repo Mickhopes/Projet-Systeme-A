@@ -120,6 +120,10 @@ AddrSpace::AddrSpace (OpenFile * executable)
 			      noffH.initData.size, noffH.initData.inFileAddr);
       }
 
+      // Initialization needed to user threads
+      IDList = NULL;
+      nbThreads = 0;
+      mutex = new Semaphore("mutex", 1);
 }
 
 //----------------------------------------------------------------------
@@ -129,10 +133,19 @@ AddrSpace::AddrSpace (OpenFile * executable)
 
 AddrSpace::~AddrSpace ()
 {
-  // LB: Missing [] for delete
-  // delete pageTable;
-  delete [] pageTable;
-  // End of modification
+    // LB: Missing [] for delete
+    // delete pageTable;
+    delete [] pageTable;
+    // End of modification
+
+    delete mutex;
+
+    struct ThreadId *prev, *curr = IDList;
+    while(curr != NULL) {
+        prev = curr;
+        curr = curr->next;
+        delete prev;
+   }
 }
 
 //----------------------------------------------------------------------
@@ -194,4 +207,76 @@ AddrSpace::RestoreState ()
 {
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
+}
+
+int
+AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
+    mutex->P();
+
+    // if we haven't any space left
+    if (nbThreads == MaxUserThreads) {
+        return -1;
+    }
+
+    struct ThreadId *t = new ThreadId;
+
+    if (nbThreads == 0) {
+        t->id = 0;
+        t->next = NULL;
+
+        IDList = t;
+    } else {
+        struct ThreadId *prev = NULL, *curr = IDList;
+        while(curr != NULL) {
+            if (prev == NULL && curr->id > 0) {
+                t->id = 0;
+                t->next = curr;
+
+                IDList = t;
+
+                break;
+            } else if (prev != NULL) {
+                if (curr->id - prev->id > 1) {
+                    t->id = prev->id+1;
+                    t->next = curr;
+
+                    prev->next = t;
+
+                    break;
+                }
+            }
+
+            prev = curr;
+            curr = curr->next;
+        }
+    }
+
+    nbThreads++;
+
+    mutex->V();
+    // TODO: Calcul de l'adresse de retour
+    return /*adresse de base + */ t->id*UserStackSize;
+}
+
+void
+AddrSpace::RemoveUserThread (unsigned int threadId) {
+    mutex->P();
+
+    struct ThreadId *prev = NULL, *curr = IDList;
+    while(curr != NULL) {
+        if (curr->id == threadId) {
+            if (prev == NULL) {
+                IDList = IDList->next;
+            } else {
+                prev->next = curr->next;
+            }
+            nbThreads--;
+            delete curr;
+            break;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+
+    mutex->V();
 }
