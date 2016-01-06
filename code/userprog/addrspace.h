@@ -14,8 +14,8 @@
 #define ADDRSPACE_H
 
 #include "copyright.h"
-#include "synch.h"
 #include "filesys.h"
+#include "synch.h"
 
 #define UserStackSize		1024	// increase this as necessary!
 
@@ -26,6 +26,8 @@ struct ThreadId {
   unsigned int id;
   struct ThreadId *next;
 };
+
+class Semaphore;
 
 class AddrSpace
 {
