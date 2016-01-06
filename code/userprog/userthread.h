@@ -1,7 +1,7 @@
 #ifndef USERTHREAD_H
 #define USERTHREAD_H
 
-#include "thread.h"
+#include "utility.h"
 
 struct ThreadArgs {
 	VoidFunctionPtr func; 
