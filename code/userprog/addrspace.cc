@@ -228,6 +228,7 @@ AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
     }
 
     struct ThreadId *t = new ThreadId;
+    struct ThreadId *prev = NULL, *curr = IDList;
 
 	// If we have no user threads running
     if (nbThreads == 0) {
@@ -236,7 +237,6 @@ AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
 
         IDList = t;
     } else {
-        struct ThreadId *prev = NULL, *curr = IDList;
 		
 		// We check our list of threads ID
         while(curr != NULL) {
@@ -264,7 +264,7 @@ AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
     }
 	
 	// We haven't find an id unused before so we add one at the end
-	if (cour == NULL) {
+	if (curr == NULL) {
 		t->id = prev->id+1;
 		t->next = NULL;
 		

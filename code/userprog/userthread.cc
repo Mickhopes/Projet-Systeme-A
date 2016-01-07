@@ -3,18 +3,27 @@
 #include "syscall.h"
 #include "machine.h"
 #include "thread.h"
+#include "addrspace.h"
 
 void StartUserThread(int f) {
-	currentThread->space->InitRegisters();
-	currentThread->space->RestoreState();
-
 	// Recupérer l'adresse du pointeur de pile
 	// avec la fonction dans addrspace.cc
 	// Si != -1, on remplit les registres et on fait Machine::Run()
 	// Sinon currentThread->Finish();
 
-	delete (struct ThreadArgs*)f;
-	machine->Run();
+	int address = currentThread->space->FindUserThreadSpace(&(currentThread->id));
+	if (address == -1){
+		//Allocation of a new thread is not possible
+		currentThread->Finish();
+	}
+	else {
+		//TODO :Verifier le registre StackReg
+		machine->WriteRegister(StackReg,address);
+		currentThread->space->InitRegisters();
+		currentThread->space->RestoreState();
+		delete (struct ThreadArgs*)f;
+		machine->Run();
+	}
 }
 
 int do_UserThreadCreate(int f, int arg) {
@@ -31,4 +40,9 @@ int do_UserThreadCreate(int f, int arg) {
 
 	// TODO: Retourner -1 lorsque création impossible
 	return 0;
+}
+
+
+void do_UserThreadExit(){
+	
 }
