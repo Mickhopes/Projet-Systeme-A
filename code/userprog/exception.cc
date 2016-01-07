@@ -25,6 +25,7 @@
 #include "system.h"
 #include "syscall.h"
 #include "userthread.h"
+#include "synch.h"
 
 //----------------------------------------------------------------------
 // UpdatePC : Increments the Program Counter register in order to resume
@@ -157,13 +158,23 @@ ExceptionHandler(ExceptionType which)
 				break;
 			}
 			case SC_UserThreadCreate: {
-				machine->WriteRegister(2, do_UserThreadCreate(machine->ReadRegister(4), machine->ReadRegister(5)));
+				machine->WriteRegister(2,do_UserThreadCreate(machine->ReadRegister(4), machine->ReadRegister(5)));
 				break;
 			}
 			case SC_UserThreadExit: {
+				do_UserThreadExit();
 				break;
 			}
 			case SC_Exit: {
+				//TODO :
+				//Notez que le programme principal ne doit pas appeler la fonction Halt tant que les threads
+				//utilisateurs n’ont pas appelé UserThreadExit! 
+				//Il faut donc le faire attendre artificiellement... Comment ? À vous de trouver !
+				//Signaux ? Wait ? Si while(1) -> Force arret des threads encore en coours si trop long ?
+
+				//Prise du semaphore qui garantit que les User threads sont tous terminés.
+				semWaitUserThreads->P();
+
 				int ret = machine->ReadRegister(4);
 				printf("Return Value of main: %d\n", ret);
 				interrupt->Halt();
