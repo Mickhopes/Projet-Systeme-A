@@ -21,8 +21,6 @@ static void StartUserThread(int f) {
 	machine->WriteRegister(PCReg, (int)((ThreadArgs*)f)->func);
     machine->WriteRegister(NextPCReg, (int)(((ThreadArgs*)f)->func)+4);
     machine->WriteRegister(4, ((ThreadArgs*)f)->arg);
-    //Place 0 dans le registre 2. SUCCESS.
-    machine->WriteRegister(2,0);
 
 	delete (struct ThreadArgs*)f;
 	machine->Run();
