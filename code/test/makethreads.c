@@ -3,7 +3,7 @@
 
 void print(){
 	
-	PutString("Dans le thread\n");
+	PutChar('Q');
 	UserThreadExit();
 	
 }	
@@ -14,6 +14,6 @@ int main(){
 	if(UserThreadCreate(print, NULL) == -1)
 		PutString("Erreur lors de la création du thread\n");
 		
-	PutString("main\n");
+	PutChar('z');
 	return 0;
 }
