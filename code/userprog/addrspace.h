@@ -51,6 +51,9 @@ class AddrSpace
 
     // Remove the user thread to the ID list and decrement nbThread
     void RemoveUserThread (unsigned int threadId);
+	
+	// Return the number of user threads running
+	int GetNbUserThreads ();
 
   private:
       TranslationEntry * pageTable;	// Assume linear page table translation

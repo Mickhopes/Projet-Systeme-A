@@ -209,17 +209,27 @@ AddrSpace::RestoreState ()
     machine->pageTableSize = numPages;
 }
 
+//----------------------------------------------------------------------
+// AddrSpace::FindUserThreadSpace
+//      Find the first unused ID in the user thread ID list.
+//      If one is available, it sets the thread ID and it returns
+//		the adress of its stack pointer.
+//
+//      The ID list begins at 0.
+//----------------------------------------------------------------------
+
 int
 AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
     mutex->P();
 
-    // if we haven't any space left
+    // If we haven't any space left
     if (nbThreads == MaxUserThreads) {
         return -1;
     }
 
     struct ThreadId *t = new ThreadId;
 
+	// If we have no user threads running
     if (nbThreads == 0) {
         t->id = 0;
         t->next = NULL;
@@ -227,6 +237,8 @@ AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
         IDList = t;
     } else {
         struct ThreadId *prev = NULL, *curr = IDList;
+		
+		// We check our list of threads ID
         while(curr != NULL) {
             if (prev == NULL && curr->id > 0) {
                 t->id = 0;
@@ -250,6 +262,17 @@ AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
             curr = curr->next;
         }
     }
+	
+	// We haven't find an id unused before so we add one at the end
+	if (cour == NULL) {
+		t->id = prev->id+1;
+		t->next = NULL;
+		
+		prev->next = t;
+	}
+	
+	// We set the thread's current ID
+	*threadId = t->id;
 
     nbThreads++;
 
@@ -257,6 +280,12 @@ AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
     // TODO: Calcul de l'adresse de retour
     return /*adresse de base + */ t->id*UserStackSize;
 }
+
+//----------------------------------------------------------------------
+// AddrSpace::RemoveUserThread
+//      Remove the ID given in parameter in the user thread ID list.
+//		Do nothing when the ID is not found.
+//----------------------------------------------------------------------
 
 void
 AddrSpace::RemoveUserThread (unsigned int threadId) {
@@ -279,4 +308,14 @@ AddrSpace::RemoveUserThread (unsigned int threadId) {
     }
 
     mutex->V();
+}
+
+//----------------------------------------------------------------------
+// AddrSpace::GetNbUserThreads
+//      Return the number of user threads running.
+//----------------------------------------------------------------------
+
+int
+AddrSpace::GetNbUserThreads () {
+	return nbThreads;
 }
