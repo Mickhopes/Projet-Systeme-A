@@ -236,7 +236,8 @@ AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
         t->next = NULL;
 
         IDList = t;
-    } else {
+    } else 
+    {
 		
 		// We check our list of threads ID
         while(curr != NULL) {
@@ -261,15 +262,17 @@ AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
             prev = curr;
             curr = curr->next;
         }
+        
+        // We haven't find an id unused before so we add one at the end
+		if (curr == NULL) {
+			t->id = prev->id+1;
+			t->next = NULL;
+		
+			prev->next = t;
+		}
     }
 	
-	// We haven't find an id unused before so we add one at the end
-	if (curr == NULL) {
-		t->id = prev->id+1;
-		t->next = NULL;
-		
-		prev->next = t;
-	}
+	
 	
 	// We set the thread's current ID
 	*threadId = t->id;
