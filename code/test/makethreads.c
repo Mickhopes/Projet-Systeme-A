@@ -1,7 +1,7 @@
 #include "syscall.h"
 #define NULL 0
 
-void print(void *i){
+void print(void *iz){
 	//PutChar('Q');
 	 int var = 0;
 	 var=1;
@@ -10,6 +10,7 @@ void print(void *i){
 	 for (i = 0; i < 100; i++){
 		var ++;
 	 }
+	 i = (int) iz;
 	 PutChar((char) i);
 	UserThreadExit();
 }	
