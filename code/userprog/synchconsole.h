@@ -18,6 +18,7 @@ class SynchConsole {
 		int SynchGetInt();
 	private:
 		Console *console;
+		Semaphore *mutex;
 };
 
 #endif // SYNCHCONSOLE_H
