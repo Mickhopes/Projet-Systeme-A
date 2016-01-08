@@ -158,10 +158,12 @@ ExceptionHandler(ExceptionType which)
 				break;
 			}
 			case SC_UserThreadCreate: {
+				DEBUG ('z', "do_UserThreadCreate\n");
 				machine->WriteRegister(2,do_UserThreadCreate(machine->ReadRegister(4), machine->ReadRegister(5)));
 				break;
 			}
 			case SC_UserThreadExit: {
+				DEBUG ('z', "do_UserThreadExit\n");
 				do_UserThreadExit();
 				break;
 			}
@@ -169,11 +171,11 @@ ExceptionHandler(ExceptionType which)
 				//TODO :
 				//Notez que le programme principal ne doit pas appeler la fonction Halt tant que les threads
 				//utilisateurs n’ont pas appelé UserThreadExit! 
-				//Il faut donc le faire attendre artificiellement... Comment ? À vous de trouver !
-				//Signaux ? Wait ? Si while(1) -> Force arret des threads encore en coours si trop long ?
 
 				//Prise du semaphore qui garantit que les User threads sont tous terminés.
+				DEBUG ('z', "%s attend semaphore pour terminer\n",currentThread->getName());
 				semWaitUserThreads->P();
+				DEBUG ('z', "%s a pris semaphore pour terminer\n",currentThread->getName());
 
 				int ret = machine->ReadRegister(4);
 				printf("Return Value of main: %d\n", ret);

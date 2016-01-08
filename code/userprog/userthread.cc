@@ -8,10 +8,7 @@
 
 //TODO : trad les commentaire en anglais ????
 
-/*Recupére l'adresse du pointeur de pile
-	* grace a FindUserThreadSpace.
-	* Si address == -1, currentThread->Finish(); 
-	* Sinon on initialise puis remplit les registres et on fait Machine::Run() */
+/* On initialise puis remplit les registres et on fait Machine::Run() */
 static void StartUserThread(int f) {
 	//Initialisation des registres.
 	currentThread->space->InitRegisters();
@@ -22,6 +19,7 @@ static void StartUserThread(int f) {
     machine->WriteRegister(NextPCReg, (int)(((ThreadArgs*)f)->func)+4);
     machine->WriteRegister(4, ((ThreadArgs*)f)->arg);
 
+    DEBUG ('z', "%d : StackReg [%d], PCReg [%d], NextPCReg [%d], Reg4 [%d]\n",currentThread->id,(int)((ThreadArgs*)f)->stackAddr,(int)((ThreadArgs*)f)->func,(int)(((ThreadArgs*)f)->func)+4,((ThreadArgs*)f)->arg);
 	delete (struct ThreadArgs*)f;
 	machine->Run();
 }
@@ -32,14 +30,17 @@ int do_UserThreadCreate(int f, int arg) {
 	newThread->space = currentThread->space;
 	//Permet de ne pas copier l'espace d'adressage un autre processus en cours
 
-	int address = currentThread->space->FindUserThreadSpace(&(currentThread->id));
+	int address = currentThread->space->FindUserThreadSpace(&(newThread->id));
 	if (address == -1){
 		//Allocation of a new thread is not possible
+		DEBUG ('z', "Creation thread impossible\n");
 		return -1;
 	}
 
 	if (currentThread->space->GetNbUserThreads() == 1) {
+		DEBUG ('z', "Attente semaphore threadUser\n");
 		semWaitUserThreads->P();
+		DEBUG ('z', "semaphore threadUser prit\n");
 	}
 
 	struct ThreadArgs *args = new ThreadArgs;
@@ -47,6 +48,7 @@ int do_UserThreadCreate(int f, int arg) {
 	args->arg = arg;
 	args->stackAddr = address;
 
+	DEBUG ('z', "Creation du thread avec ID %d\n",newThread->id);
 	newThread->Fork(StartUserThread, (int)args);
 
 	return 0;
@@ -54,12 +56,13 @@ int do_UserThreadCreate(int f, int arg) {
 
 
 void do_UserThreadExit(){
+	DEBUG ('z', "Suppression du thread avec ID %d\n",currentThread->id);
 	//Il faut que les User thread appele UserThreadExit avant que le main se termine. CF. userprog/exception.cc AS:SC_Exit(ligne 166)
 	currentThread->space->RemoveUserThread(currentThread->id);
 
 	if (currentThread->space->GetNbUserThreads() == 0) {
+		DEBUG ('z', "Liberation semaphore threadUser\n");
 		semWaitUserThreads->V();
 	}
-
 	currentThread->Finish();
 }

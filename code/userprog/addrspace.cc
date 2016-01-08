@@ -192,6 +192,8 @@ AddrSpace::InitRegisters ()
 void
 AddrSpace::SaveState ()
 {
+    pageTable = machine->pageTable;
+    numPages = machine->pageTableSize;
 }
 
 //----------------------------------------------------------------------
@@ -221,11 +223,6 @@ AddrSpace::RestoreState ()
 int
 AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
     mutex->P();
-
-    // If we haven't any space left
-    if (nbThreads == MaxUserThreads) {
-        return -1;
-    }
 
     struct ThreadId *t = new ThreadId;
 	// If we have no user threads running
@@ -270,16 +267,21 @@ AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
 		}
     }
 	
-	
-	
 	// We set the thread's current ID
 	*threadId = t->id;
 
     nbThreads++;
 
     mutex->V();
+
+    // If we have no space left
+    if ((machine->ReadRegister(StackReg) + 2*PageSize + ((int)t->id)*PageSize*NbPageUserThread) >= (machine->ReadRegister(StackReg) + UserStackSize)) {
+        RemoveUserThread(t->id);
+        return -1;
+    }
+
     // TODO: Calcul de l'adresse de retour
-    return /*adresse de base + */ t->id*UserStackSize;
+    return machine->ReadRegister(StackReg) + 2*PageSize + t->id*PageSize*NbPageUserThread;
 }
 
 //----------------------------------------------------------------------

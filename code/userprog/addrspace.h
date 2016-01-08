@@ -19,7 +19,7 @@
 
 #define UserStackSize		1024	// increase this as necessary!
 
-#define MaxUserThreads  4 // TODO: calculer le nombre de threads user possible. genre (taille de l'espace d'adressage - taille main) / UserStackSize
+#define NbPageUserThread 2 // Number of pages for a user thread
 
 // Structure for keeping track of used IDs
 struct ThreadId {

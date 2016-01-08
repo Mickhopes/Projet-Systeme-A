@@ -206,6 +206,7 @@ Thread::Yield ()
     nextThread = scheduler->FindNextToRun ();
     if (nextThread != NULL)
       {
+          DEBUG ('t', "Changement du thread %s\n", nextThread->getName());
 	  scheduler->ReadyToRun (this);
 	  scheduler->Run (nextThread);
       }
