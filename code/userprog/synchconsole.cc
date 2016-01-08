@@ -14,7 +14,7 @@ SynchConsole::SynchConsole(char *readFile, char *writeFile)
 	readAvail = new Semaphore("read avail", 0);
 	writeDone = new Semaphore("write done", 0);
 	console = new Console(readFile, writeFile, ReadAvail, WriteDone, 0);
-	mutex = new Semaphore("mutex", 1);
+	mutex = new Semaphore("Synchronisation", 1);
 }
 
 SynchConsole::~SynchConsole()
@@ -37,8 +37,9 @@ int SynchConsole::SynchGetChar()
 {
 	mutex->P();
 	readAvail->P();
-	int ret  = console->GetChar();
+	int ret = (int)console->GetChar();
 	mutex->V();
+
 	return ret;
 }
 

@@ -4,6 +4,7 @@
 #include "copyright.h"
 #include "utility.h"
 #include "console.h"
+#include "synch.h"
 
 class SynchConsole {
 	public:
