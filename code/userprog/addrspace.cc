@@ -275,13 +275,17 @@ AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
     mutex->V();
 
     // If we have no space left
-    if ((machine->ReadRegister(StackReg) + 2*PageSize + ((int)t->id)*PageSize*NbPageUserThread) >= (machine->ReadRegister(StackReg) + UserStackSize)) {
+   /* if ((machine->ReadRegister(StackReg) + 2*PageSize + ((int)t->id)*PageSize*NbPageUserThread) >= (machine->ReadRegister(StackReg) + UserStackSize)) {
+        RemoveUserThread(t->id);
+        return -1;
+    }*/
+    if ((machine->ReadRegister(StackReg) - 2*PageSize - ((int)t->id)*PageSize*NbPageUserThread) < (machine->ReadRegister(StackReg) - UserStackSize)) {
         RemoveUserThread(t->id);
         return -1;
     }
 
-    // TODO: Calcul de l'adresse de retour
-    return machine->ReadRegister(StackReg) + 2*PageSize + t->id*PageSize*NbPageUserThread;
+    
+    return machine->ReadRegister(StackReg) - 2*PageSize - t->id*PageSize*NbPageUserThread;
 }
 
 //----------------------------------------------------------------------

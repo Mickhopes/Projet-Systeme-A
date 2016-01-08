@@ -3,12 +3,13 @@
 
 void print(){
 	//PutChar('Q');
-	// int var = 0;
-	// var=1;
-	// int i;
-	// for (i = 0; i < 100; i++){
-	// 	var ++;
-	// }
+	 int var = 0;
+	 var=1;
+	 
+	 int i;
+	 for (i = 0; i < 100; i++){
+		var ++;
+	 }
 	UserThreadExit();
 }	
 
@@ -16,17 +17,17 @@ void print(){
 int main(){
 	
 	if(UserThreadCreate(print, NULL) != -1){
-		//PutString("Erreur lors de la création du thread\n");
+		//PutString("pas d'Erreur lors de la création du thread\n");
 		PutChar('z');
 	}
-	// if(UserThreadCreate(print, NULL) != -1){
-	// 	//PutString("Erreur lors de la création du thread\n");
-	// 	PutChar('p');
-	// }
-	// if(UserThreadCreate(print, NULL) != -1){
-	// 	//PutString("Erreur lors de la création du thread\n");
-	// 	PutChar('m');
-	// }
+	if(UserThreadCreate(print, NULL) != -1){
+	 	//PutString("pas d'Erreur lors de la création du thread\n");
+	 	PutChar('p');
+	 }
+	 if(UserThreadCreate(print, NULL) != -1){
+	 	//PutString("pas d'Erreur lors de la création du thread\n");
+	 	PutChar('m');
+	 }
 
 		
 	//PutChar('z');
