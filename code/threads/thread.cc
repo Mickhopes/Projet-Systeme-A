@@ -25,7 +25,7 @@
 					// stack overflows
 
 #ifdef USER_PROGRAM
-unsigned int Thread::numThreads = 1; // static variable to keep track of thread's IDs
+unsigned int Thread::numThreads = 0; // static variable to keep track of thread's IDs
 #endif
 
 //----------------------------------------------------------------------
@@ -428,7 +428,7 @@ Thread::FindThreadId () {
   if (numThreads == ThreadIdThreshold) {
     numThreads = 0;
   }
-  return numThreads++;
+  return ++numThreads;
 }
 #endif
 

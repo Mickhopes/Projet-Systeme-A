@@ -66,7 +66,7 @@ void do_UserThreadExit(){
 		DEBUG ('z', "Liberation semaphore threadUser\n");
 		currentThread->space->semWaitUserThreads->V();
 	}
-
+	
 	if (sem != NULL) {
 		sem->V();
 	}
