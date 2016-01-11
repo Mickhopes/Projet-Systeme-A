@@ -32,7 +32,7 @@ int do_UserThreadCreate(int f, int arg) {
 
 	newThread->id = newThread->space->FindUserThreadId();
 
-	int address = currentThread->space->FindUserThreadSpace(&(newThread->idSpace), newThread->id, newThread->semJoin);
+	int address = currentThread->space->FindUserThreadSpace(&(newThread->idSpace), newThread->id);
 	if (address == -1){
 		//Allocation of a new thread is not possible
 		DEBUG ('z', "Creation thread impossible\n");

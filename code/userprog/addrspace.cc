@@ -330,6 +330,8 @@ AddrSpace::RemoveUserThread (unsigned int threadIdSpace) {
     }
 
     mutex->V();
+
+    return NULL;
 }
 
 //----------------------------------------------------------------------
@@ -352,7 +354,7 @@ int
 AddrSpace::ExistsUserThread (unsigned int threadId) {
     mutex->P();
 
-    struct ThreadId *prev = NULL, *curr = IDList;
+    struct ThreadId *curr = IDList;
     while(curr != NULL) {
         if (curr->id == threadId) {
             if (curr->waited == 1) {
@@ -360,7 +362,7 @@ AddrSpace::ExistsUserThread (unsigned int threadId) {
             }
             return 0;
         }
-        prev = curr;
+
         curr = curr->next;
     }
 
@@ -375,10 +377,10 @@ AddrSpace::ExistsUserThread (unsigned int threadId) {
 //----------------------------------------------------------------------
 
 void
-WaitForThread (unsigned int threadId, Semaphore *semJoin) {
+AddrSpace::WaitForThread (unsigned int threadId, Semaphore *semJoin) {
     mutex->P();
 
-    struct ThreadId *prev = NULL, *curr = IDList;
+    struct ThreadId *curr = IDList;
     while(curr != NULL) {
         if (curr->id == threadId) {
             curr->waited = 1;
@@ -389,7 +391,6 @@ WaitForThread (unsigned int threadId, Semaphore *semJoin) {
 
             return;
         }
-        prev = curr;
         curr = curr->next;
     }
 
@@ -397,8 +398,10 @@ WaitForThread (unsigned int threadId, Semaphore *semJoin) {
 }
 
 int
-FindUserThreadId () {
+AddrSpace::FindUserThreadId () {
     mutex->P();
+
+    return 0;
 
     mutex->V();
 }

@@ -78,6 +78,7 @@ extern void ThreadPrint (int arg);
 //  that only run in the kernel have a NULL address space.
 
 class AddrSpace;
+class Semaphore;
 
 class Thread
 {

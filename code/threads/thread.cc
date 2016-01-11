@@ -72,8 +72,10 @@ Thread::~Thread ()
 {
     DEBUG ('t', "Deleting thread \"%s\"\n", name);
 
+#ifdef USER_PROGRAM
     delete semJoin;
     semJoin = NULL;
+#endif
 
     ASSERT (this != currentThread);
     if (stack != NULL)

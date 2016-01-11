@@ -23,6 +23,8 @@
 
 #define MaxUserThreads 12
 
+class Semaphore;
+
 // Structure for keeping track of used IDs
 struct ThreadId {
   unsigned int id;
@@ -31,8 +33,6 @@ struct ThreadId {
   int waited;
   struct ThreadId *next;
 };
-
-class Semaphore;
 
 class AddrSpace
 {
