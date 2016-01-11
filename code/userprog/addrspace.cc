@@ -396,12 +396,3 @@ AddrSpace::WaitForThread (unsigned int threadId, Semaphore *semJoin) {
 
     mutex->V();
 }
-
-int
-AddrSpace::FindUserThreadId () {
-    mutex->P();
-
-    return 0;
-
-    mutex->V();
-}

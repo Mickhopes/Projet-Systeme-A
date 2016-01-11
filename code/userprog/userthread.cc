@@ -30,7 +30,7 @@ int do_UserThreadCreate(int f, int arg) {
 	newThread->space = currentThread->space;
 	//Permet de ne pas copier l'espace d'adressage un autre processus en cours
 
-	newThread->id = newThread->space->FindUserThreadId();
+	newThread->id = newThread->FindThreadId();
 
 	int address = currentThread->space->FindUserThreadSpace(&(newThread->idSpace), newThread->id);
 	if (address == -1){

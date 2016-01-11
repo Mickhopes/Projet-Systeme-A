@@ -422,6 +422,14 @@ Thread::RestoreUserState ()
     for (int i = 0; i < NumTotalRegs; i++)
 	machine->WriteRegister (i, userRegisters[i]);
 }
+
+int
+Thread::FindThreadId () {
+  if (numThreads == ThreadIdThreshold) {
+    numThreads = 0;
+  }
+  return numThreads++;
+}
 #endif
 
 

@@ -56,7 +56,7 @@
 #define StackSize	(4 * 1024)	// in words
 
 #ifdef USER_PROGRAM
-#define ThreadIdThreshold 15000
+#define ThreadIdThreshold 1500000
 #endif
 
 // Thread state
@@ -142,6 +142,7 @@ class Thread
   public:
     void SaveUserState ();	// save user-level register state
     void RestoreUserState ();	// restore user-level register state
+    int FindThreadId();
 
     AddrSpace *space;		// User code this thread is running.
     unsigned int id;        // User thread's ID
