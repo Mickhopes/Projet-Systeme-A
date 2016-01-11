@@ -21,9 +21,14 @@
 
 #define NbPageUserThread 2 // Number of pages for a user thread
 
+#define MaxUserThreads 12
+
 // Structure for keeping track of used IDs
 struct ThreadId {
   unsigned int id;
+  unsigned int idSpace;
+  Semaphore *sem;
+  int waited;
   struct ThreadId *next;
 };
 
@@ -46,14 +51,24 @@ class AddrSpace
     // Add the user thread to the ID list and increment nbThread
     // Return the adress of a stack space for the user thread
     // or -1 if there isn't any space available
-    // This function set the thread's ID
-    int FindUserThreadSpace (unsigned int *threadId);
+    // This function set the thread's ID space
+    int FindUserThreadSpace (unsigned int *threadIdSpace, unsigned int threadId);
 
-    // Remove the user thread to the ID list and decrement nbThread
-    void RemoveUserThread (unsigned int threadId);
+    // Remove the user thread to the ID list and decrement nbThread and returns the semaphore waiting for it
+    Semaphore* RemoveUserThread (unsigned int threadIdSpace);
 	
-	// Return the number of user threads running
-	int GetNbUserThreads ();
+    // Return the number of user threads running
+    int GetNbUserThreads ();
+
+    // Return -1 if the thread isn't in the ID list, 0 otherwise
+    int ExistsUserThread (unsigned int threadId);
+
+    void WaitForThread (unsigned int threadId, Semaphore *semJoin);
+
+    /* Return an incremented id that is unused */
+    int FindUserThreadId ();
+
+    Semaphore *semWaitUserThreads;
 
   private:
       TranslationEntry * pageTable;	// Assume linear page table translation

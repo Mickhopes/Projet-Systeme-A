@@ -115,6 +115,12 @@ ExceptionHandler(ExceptionType which)
 		switch (type) { // Type correspond to the type of system call
 			case SC_Halt: {
 				DEBUG('a', "Shutdown, initiated by user program.\n");
+
+				//Prise du semaphore qui garantit que les User threads sont tous terminés.
+				DEBUG ('z', "%s attend semaphore pour terminer\n",currentThread->getName());
+				currentThread->space->semWaitUserThreads->P();
+				DEBUG ('z', "%s a pris semaphore pour terminer\n",currentThread->getName());
+
 				interrupt->Halt();
 				break;
 			}
@@ -167,6 +173,11 @@ ExceptionHandler(ExceptionType which)
 				do_UserThreadExit();
 				break;
 			}
+			case SC_UserThreadJoin: {
+				DEBUG ('z', "do_UserThreadJoin\n");
+				machine->WriteRegister(2, do_UserThreadJoin(machine->ReadRegister(4)));
+				break;
+			}
 			case SC_Exit: {
 				//TODO :
 				//Notez que le programme principal ne doit pas appeler la fonction Halt tant que les threads
@@ -174,7 +185,7 @@ ExceptionHandler(ExceptionType which)
 
 				//Prise du semaphore qui garantit que les User threads sont tous terminés.
 				DEBUG ('z', "%s attend semaphore pour terminer\n",currentThread->getName());
-				semWaitUserThreads->P();
+				currentThread->space->semWaitUserThreads->P();
 				DEBUG ('z', "%s a pris semaphore pour terminer\n",currentThread->getName());
 
 				int ret = machine->ReadRegister(4);

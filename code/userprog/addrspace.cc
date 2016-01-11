@@ -124,6 +124,7 @@ AddrSpace::AddrSpace (OpenFile * executable)
       IDList = NULL;
       nbThreads = 0;
       mutex = new Semaphore("mutex", 1);
+      semWaitUserThreads = new Semaphore("Waiting for main thread", 1);
 }
 
 //----------------------------------------------------------------------
@@ -138,6 +139,7 @@ AddrSpace::~AddrSpace ()
     delete [] pageTable;
     // End of modification
 
+    delete semWaitUserThreads;
     delete mutex;
 
     struct ThreadId *prev, *curr = IDList;
@@ -213,7 +215,7 @@ AddrSpace::RestoreState ()
 
 //----------------------------------------------------------------------
 // AddrSpace::FindUserThreadSpace
-//      Find the first unused ID in the user thread ID list.
+//      Find the first unused ID space in the user thread ID list.
 //      If one is available, it sets the thread ID and it returns
 //		the adress of its stack pointer.
 //
@@ -221,13 +223,22 @@ AddrSpace::RestoreState ()
 //----------------------------------------------------------------------
 
 int
-AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
+AddrSpace::FindUserThreadSpace (unsigned int *threadIdSpace, unsigned int threadId) {
     mutex->P();
 
+    if (nbThreads == MaxUserThreads) {
+        mutex->V();
+        return -1;
+    }
+
     struct ThreadId *t = new ThreadId;
+    t->id = threadId;
+    t->waited = 0;
+    t->sem = NULL;
+
 	// If we have no user threads running
     if (nbThreads == 0) {
-        t->id = 0;
+        t->idSpace = 0;
         t->next = NULL;
 
         IDList = t;
@@ -236,16 +247,16 @@ AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
 		struct ThreadId *prev = NULL, *curr = IDList;
 		// We check our list of threads ID
         while(curr != NULL) {
-            if (prev == NULL && curr->id > 0) {
-                t->id = 0;
+            if (prev == NULL && curr->idSpace > 0) {
+                t->idSpace = 0;
                 t->next = curr;
 
                 IDList = t;
 
                 break;
             } else if (prev != NULL) {
-                if (curr->id - prev->id > 1) {
-                    t->id = prev->id+1;
+                if (curr->idSpace - prev->idSpace > 1) {
+                    t->idSpace = prev->idSpace+1;
                     t->next = curr;
 
                     prev->next = t;
@@ -260,7 +271,7 @@ AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
         
         // We haven't find an id unused before so we add one at the end
 		if (curr == NULL) {
-			t->id = prev->id+1;
+			t->idSpace = prev->idSpace+1;
 			t->next = NULL;
 		
 			prev->next = t;
@@ -268,7 +279,7 @@ AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
     }
 	
 	// We set the thread's current ID
-	*threadId = t->id;
+	*threadIdSpace = t->idSpace;
 
     nbThreads++;
 
@@ -279,28 +290,30 @@ AddrSpace::FindUserThreadSpace (unsigned int *threadId) {
         RemoveUserThread(t->id);
         return -1;
     }*/
-    if ((machine->ReadRegister(StackReg) - 2*PageSize - ((int)t->id)*PageSize*NbPageUserThread) < (machine->ReadRegister(StackReg) - UserStackSize)) {
-        RemoveUserThread(t->id);
+    if ((machine->ReadRegister(StackReg) - 2*PageSize - ((int)t->idSpace)*PageSize*NbPageUserThread) < (machine->ReadRegister(StackReg) - UserStackSize)) {
+        RemoveUserThread(t->idSpace);
         return -1;
     }
 
     
-    return machine->ReadRegister(StackReg) - 2*PageSize - t->id*PageSize*NbPageUserThread;
+    return machine->ReadRegister(StackReg) - 2*PageSize - t->idSpace*PageSize*NbPageUserThread;
 }
 
 //----------------------------------------------------------------------
 // AddrSpace::RemoveUserThread
-//      Remove the ID given in parameter in the user thread ID list.
-//		Do nothing when the ID is not found.
+//      Remove the ID space given in parameter in the user thread ID list.
+//		Do nothing when the ID space is not found.
 //----------------------------------------------------------------------
 
-void
-AddrSpace::RemoveUserThread (unsigned int threadId) {
+Semaphore*
+AddrSpace::RemoveUserThread (unsigned int threadIdSpace) {
     mutex->P();
 
     struct ThreadId *prev = NULL, *curr = IDList;
     while(curr != NULL) {
-        if (curr->id == threadId) {
+        if (curr->idSpace == threadIdSpace) {
+            Semaphore *tmp = curr->sem;
+
             if (prev == NULL) {
                 IDList = IDList->next;
             } else {
@@ -308,7 +321,9 @@ AddrSpace::RemoveUserThread (unsigned int threadId) {
             }
             nbThreads--;
             delete curr;
-            break;
+
+            mutex->V();
+            return tmp;
         }
         prev = curr;
         curr = curr->next;
@@ -325,4 +340,65 @@ AddrSpace::RemoveUserThread (unsigned int threadId) {
 int
 AddrSpace::GetNbUserThreads () {
 	return nbThreads;
+}
+
+//----------------------------------------------------------------------
+// AddrSpace::ExistsUserThread
+//      Return -1 if the thread threadId isn't running, 0 otherwise.
+//      -2 if thread is already waited by another thread
+//----------------------------------------------------------------------
+
+int
+AddrSpace::ExistsUserThread (unsigned int threadId) {
+    mutex->P();
+
+    struct ThreadId *prev = NULL, *curr = IDList;
+    while(curr != NULL) {
+        if (curr->id == threadId) {
+            if (curr->waited == 1) {
+                return -2;
+            }
+            return 0;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+
+    mutex->V();
+
+    return -1;
+}
+
+//----------------------------------------------------------------------
+// AddrSpace::WaitForThread
+//      Wait for the threadId thread to finish
+//----------------------------------------------------------------------
+
+void
+WaitForThread (unsigned int threadId, Semaphore *semJoin) {
+    mutex->P();
+
+    struct ThreadId *prev = NULL, *curr = IDList;
+    while(curr != NULL) {
+        if (curr->id == threadId) {
+            curr->waited = 1;
+            curr->sem = semJoin;
+
+            mutex->V();
+            semJoin->P();
+
+            return;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+
+    mutex->V();
+}
+
+int
+FindUserThreadId () {
+    mutex->P();
+
+    mutex->V();
 }

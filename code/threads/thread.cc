@@ -24,6 +24,10 @@
 					// execution stack, for detecting 
 					// stack overflows
 
+#ifdef USER_PROGRAM
+unsigned int Thread::numThreads = 1; // static variable to keep track of thread's IDs
+#endif
+
 //----------------------------------------------------------------------
 // Thread::Thread
 //      Initialize a thread control block, so that we can then call
@@ -45,6 +49,10 @@ Thread::Thread (const char *threadName)
     // user threads.
     for (int r=NumGPRegs; r<NumTotalRegs; r++)
       userRegisters[r] = 0;
+
+    semJoin = new Semaphore("Join", 0);
+
+    idSpace = -1;
 #endif
 }
 
@@ -63,6 +71,9 @@ Thread::Thread (const char *threadName)
 Thread::~Thread ()
 {
     DEBUG ('t', "Deleting thread \"%s\"\n", name);
+
+    delete semJoin;
+    semJoin = NULL;
 
     ASSERT (this != currentThread);
     if (stack != NULL)

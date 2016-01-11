@@ -55,6 +55,9 @@
 // WATCH OUT IF THIS ISN'T BIG ENOUGH!!!!!
 #define StackSize	(4 * 1024)	// in words
 
+#ifdef USER_PROGRAM
+#define ThreadIdThreshold 15000
+#endif
 
 // Thread state
 enum ThreadStatus
@@ -140,7 +143,11 @@ class Thread
     void RestoreUserState ();	// restore user-level register state
 
     AddrSpace *space;		// User code this thread is running.
-    unsigned int id;    // User thread's ID
+    unsigned int id;        // User thread's ID
+    unsigned int idSpace;   // User thread's space ID, used in address space.
+    Semaphore *semJoin;         // Semaphore used for join
+
+    static unsigned int numThreads;
 #endif
 };
 

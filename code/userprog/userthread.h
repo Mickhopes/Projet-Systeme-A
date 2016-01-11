@@ -15,5 +15,7 @@ extern int do_UserThreadCreate(int f, int arg);
 /* End a user thread */
 extern void do_UserThreadExit();
 
+/* Wait for the user thread threadId to finish */
+extern int do_UserThreadJoin(unsigned int threadId);
 
 #endif /* USERTHREAD_H */

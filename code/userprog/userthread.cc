@@ -30,7 +30,9 @@ int do_UserThreadCreate(int f, int arg) {
 	newThread->space = currentThread->space;
 	//Permet de ne pas copier l'espace d'adressage un autre processus en cours
 
-	int address = currentThread->space->FindUserThreadSpace(&(newThread->id));
+	newThread->id = newThread->space->FindUserThreadId();
+
+	int address = currentThread->space->FindUserThreadSpace(&(newThread->idSpace), newThread->id, newThread->semJoin);
 	if (address == -1){
 		//Allocation of a new thread is not possible
 		DEBUG ('z', "Creation thread impossible\n");
@@ -39,7 +41,7 @@ int do_UserThreadCreate(int f, int arg) {
 
 	if (currentThread->space->GetNbUserThreads() == 1) {
 		DEBUG ('z', "Attente semaphore threadUser\n");
-		semWaitUserThreads->P();
+		currentThread->space->semWaitUserThreads->P();
 		DEBUG ('z', "semaphore threadUser prit\n");
 	}
 
@@ -51,18 +53,36 @@ int do_UserThreadCreate(int f, int arg) {
 	DEBUG ('z', "Creation du thread avec ID %d\n",newThread->id);
 	newThread->Fork(StartUserThread, (int)args);
 
-	return 0;
+	return newThread->id;
 }
 
 
 void do_UserThreadExit(){
 	DEBUG ('z', "Suppression du thread avec ID %d\n",currentThread->id);
 	//Il faut que les User thread appele UserThreadExit avant que le main se termine. CF. userprog/exception.cc AS:SC_Exit(ligne 166)
-	currentThread->space->RemoveUserThread(currentThread->id);
+	Semaphore *sem = currentThread->space->RemoveUserThread(currentThread->idSpace);
 
 	if (currentThread->space->GetNbUserThreads() == 0) {
 		DEBUG ('z', "Liberation semaphore threadUser\n");
-		semWaitUserThreads->V();
+		currentThread->space->semWaitUserThreads->V();
 	}
+
+	if (sem != NULL) {
+		sem->V();
+	}
+
 	currentThread->Finish();
+}
+
+int do_UserThreadJoin(unsigned int threadId){
+	DEBUG ('z', "Join du thread %d sur le %d\n",currentThread->id, threadId);
+
+	int ret;
+	if ((ret = currentThread->space->ExistsUserThread(threadId)) < 0) {
+		return ret;
+	}
+
+	currentThread->space->WaitForThread(threadId, currentThread->semJoin);
+
+	return 0;
 }

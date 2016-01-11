@@ -38,7 +38,6 @@ extern Timer *timer;		// the hardware alarm clock
 
 extern Machine *machine;	// user program memory and registers
 extern SynchConsole *synchconsole;
-extern Semaphore *semWaitUserThreads;
 #endif //USER_PROGRAM
 
 #ifdef FILESYS_NEEDED		// FILESYS or FILESYS_STUB

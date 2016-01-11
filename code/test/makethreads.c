@@ -1,8 +1,10 @@
 #include "syscall.h"
 
+char alph = 'a';
+
 void print(void* arg) {
-	PutChar((char)((int)arg));
-	PutString("coucou !");
+	PutChar(alph++);
+	PutString("coucou !\n");
 
 	UserThreadExit();
 }	
@@ -16,13 +18,13 @@ int main(){
 	}
 	if(UserThreadCreate(print, (void*) 'b') != -1){
 	 	//PutString("pas d'Erreur lors de la création du thread\n");
-	 	PutString("Je suis le second!\n");
+	 	PutString("Je suis le second !\n");
 	 }
 	 if(UserThreadCreate(print, (void*) 'c') != -1){
 	 	//PutString("pas d'Erreur lors de la création du thread\n");
 	 	PutString("Je sais pas, je sais pas compter !\n");
 	 }
-
+	 Halt();
 		
 	//PutChar('z');
 	return 0;

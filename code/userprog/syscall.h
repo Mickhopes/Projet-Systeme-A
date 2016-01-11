@@ -37,6 +37,7 @@
 #define SC_GetInt	 16
 #define SC_UserThreadCreate 17
 #define SC_UserThreadExit 18
+#define SC_UserThreadJoin 19
 
 #ifdef IN_USER_MODE
 
@@ -149,16 +150,19 @@ void PutString (char *c);
 char* GetString ();
 
 /* Write the int to the standard output */
-void PutInt(int n);
+void PutInt (int n);
 
 /* read the int from the standard input */
-int GetInt();
+int GetInt ();
 
 /* Create a new user thread */
-int UserThreadCreate(void f(void *arg), void *arg);
+int UserThreadCreate (void f(void *arg), void *arg);
 
 /* Exit the user thread */
-void UserThreadExit();
+void UserThreadExit ();
+
+/* Wait for the user thread threadId to finish */
+int UserThreadJoin (unsigned int threadId);
 
 #endif // IN_USER_MODE
 

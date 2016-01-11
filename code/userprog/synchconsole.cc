@@ -27,35 +27,38 @@ SynchConsole::~SynchConsole()
 
 void SynchConsole::SynchPutChar(const char ch)
 {
-	mutex->P();
-	console->PutChar(ch);
-	writeDone->P();
-	mutex->V();
+	char buff[2];
+	buff[0] = ch;
+	buff[1] = '\0';
+	SynchPutString(buff);
 }
 
 int SynchConsole::SynchGetChar()
 {
-	mutex->P();
-	readAvail->P();
-	int ret = (int)console->GetChar();
-	mutex->V();
+	char buff[1];
+	SynchGetString(buff, 1);
 
-	return ret;
+	return (int)buff[0];
 }
 
 void SynchConsole::SynchPutString(const char s[])
 {
+	mutex->P();
 	int i = 0;
 	while(s[i] != '\0') {
-		SynchPutChar(s[i++]);
-	} 
+		console->PutChar(s[i++]);
+		writeDone->P();
+	}
+	mutex->V();
 }
 
 void SynchConsole::SynchGetString(char *s, int n)
 {
+	mutex->P();
 	int i;
 	for(i = 0; i < n; i++) {
-		s[i] = (char)SynchGetChar();
+		readAvail->P();
+		s[i] = console->GetChar();
 		if (s[i] == '\n') {
 			s[i+1] = '\0';
 			break;
@@ -64,6 +67,7 @@ void SynchConsole::SynchGetString(char *s, int n)
 			break;
 		}
 	}
+	mutex->V();
 }
 
 void SynchConsole::SynchPutInt(int n)

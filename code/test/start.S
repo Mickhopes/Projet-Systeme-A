@@ -146,7 +146,7 @@ GetChar:
 	.end GetChar
 
 	.globl PutString
-	.ent	PutString
+	.ent	PutString 
 PutString:
 	addiu $2,$0,SC_PutString
 	syscall
@@ -192,6 +192,11 @@ UserThreadExit:
 	syscall
 	j	$31
 	.end UserThreadExit
+UserThreadJoin:
+	addiu $2,$0,SC_UserThreadJoin
+	syscall
+	j	$31
+	.end UserThreadJoin
 
 /* dummy function to keep gcc happy */
         .globl  __main
