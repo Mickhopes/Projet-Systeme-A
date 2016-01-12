@@ -78,6 +78,8 @@ void do_UserThreadExit(){
 int do_UserThreadJoin(unsigned int threadId){
 	DEBUG ('z', "Join du thread %d sur le %d\n",currentThread->id, threadId);
 
+	currentThread->semJoin = new Semaphore("Join", 0);
+
 	int ret;
 	if ((ret = currentThread->space->IsJoinableUserThread(threadId, currentThread->id)) < 0) {
 		switch(ret) {

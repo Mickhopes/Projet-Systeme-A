@@ -50,7 +50,7 @@ Thread::Thread (const char *threadName)
     for (int r=NumGPRegs; r<NumTotalRegs; r++)
       userRegisters[r] = 0;
 
-    semJoin = new Semaphore("Join", 0);
+    semJoin = NULL;
 
     idSpace = -1;
 #endif
@@ -73,8 +73,10 @@ Thread::~Thread ()
     DEBUG ('t', "Deleting thread \"%s\"\n", name);
 
 #ifdef USER_PROGRAM
-    delete semJoin;
-    semJoin = NULL;
+    if (semJoin != NULL) {
+      delete semJoin;
+      semJoin = NULL;
+    }
 #endif
 
     ASSERT (this != currentThread);
