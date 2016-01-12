@@ -45,6 +45,23 @@ SwapHeader (NoffHeader * noffH)
     noffH->uninitData.inFileAddr = WordToHost (noffH->uninitData.inFileAddr);
 }
 
+static int
+ReadAtVirtual(OpenFile *executable, int virtualaddr, int numBytes, int position, TranslationEntry *pageTable, unsigned numPages)
+{
+    char *buf = new char[numBytes];
+    executable->ReadAt(buf, numBytes, position);
+
+    machine->pageTable = pageTable;
+    machine->pageTableSize = numPages;
+
+    for(int i = 0; i < numBytes; i++) {
+        machine->WriteMem(virtualaddr+i, 1, (int)buf[i]);
+    }
+
+    delete [] buf;
+    return numBytes;
+}
+
 //----------------------------------------------------------------------
 // AddrSpace::AddrSpace
 //      Create an address space to run a user program.
@@ -89,7 +106,7 @@ AddrSpace::AddrSpace (OpenFile * executable)
     for (i = 0; i < numPages; i++)
       {
 	  pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-	  pageTable[i].physicalPage = i;
+	  pageTable[i].physicalPage = i+1;
 	  pageTable[i].valid = TRUE;
 	  pageTable[i].use = FALSE;
 	  pageTable[i].dirty = FALSE;
@@ -107,17 +124,19 @@ AddrSpace::AddrSpace (OpenFile * executable)
       {
 	  DEBUG ('a', "Initializing code segment, at 0x%x, size %d\n",
 		 noffH.code.virtualAddr, noffH.code.size);
-	  executable->ReadAt (&(machine->mainMemory[noffH.code.virtualAddr]),
-			      noffH.code.size, noffH.code.inFileAddr);
+      ReadAtVirtual(executable, noffH.code.virtualAddr, noffH.code.size, noffH.code.inFileAddr, pageTable, numPages);
+	  /*executable->ReadAt (&(machine->mainMemory[noffH.code.virtualAddr]),
+			      noffH.code.size, noffH.code.inFileAddr); */
       }
     if (noffH.initData.size > 0)
       {
 	  DEBUG ('a', "Initializing data segment, at 0x%x, size %d\n",
 		 noffH.initData.virtualAddr, noffH.initData.size);
-	  executable->ReadAt (&
+      ReadAtVirtual(executable, noffH.initData.virtualAddr, noffH.initData.size, noffH.initData.inFileAddr, pageTable, numPages);
+	  /*executable->ReadAt (&
 			      (machine->mainMemory
 			       [noffH.initData.virtualAddr]),
-			      noffH.initData.size, noffH.initData.inFileAddr);
+			      noffH.initData.size, noffH.initData.inFileAddr); */
       }
 
       // Initialization needed to user threads
