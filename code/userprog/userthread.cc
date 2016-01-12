@@ -5,6 +5,7 @@
 #include "machine.h"
 #include "thread.h"
 #include "addrspace.h"
+#include "errorno.h"
 
 //TODO : trad les commentaire en anglais ????
 
@@ -78,11 +79,22 @@ int do_UserThreadJoin(unsigned int threadId){
 	DEBUG ('z', "Join du thread %d sur le %d\n",currentThread->id, threadId);
 
 	int ret;
-	if ((ret = currentThread->space->ExistsUserThread(threadId)) < 0) {
-		return ret;
+	if ((ret = currentThread->space->IsJoinableUserThread(threadId, currentThread->id)) < 0) {
+		switch(ret) {
+			case -1:
+				errorno = ESRCH;
+				break;
+			case -2:
+				errorno = EINVAL;
+				break;
+			case -3:
+				errorno = EDEADLK;
+				break;
+		}
+		return -1;
 	}
 
-	currentThread->space->WaitForThread(threadId, currentThread->semJoin);
+	currentThread->space->WaitForThread(threadId, currentThread->id, currentThread->semJoin);
 
 	return 0;
 }

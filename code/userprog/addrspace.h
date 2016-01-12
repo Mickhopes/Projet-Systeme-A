@@ -30,7 +30,7 @@ struct ThreadId {
   unsigned int id;
   unsigned int idSpace;
   Semaphore *sem;
-  int waited;
+  unsigned int waited;
   struct ThreadId *next;
 };
 
@@ -61,9 +61,10 @@ class AddrSpace
     int GetNbUserThreads ();
 
     // Return -1 if the thread isn't in the ID list, 0 otherwise
-    int ExistsUserThread (unsigned int threadId);
+    int IsJoinableUserThread (unsigned int threadId, unsigned int joinId);
 
-    void WaitForThread (unsigned int threadId, Semaphore *semJoin);
+    // Put the thread for threadId in waiting
+    void WaitForThread (unsigned int threadId, unsigned int joinId, Semaphore *semJoin);
 
     /* Return an incremented id that is unused */
     int FindUserThreadId ();

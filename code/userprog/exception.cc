@@ -26,6 +26,9 @@
 #include "syscall.h"
 #include "userthread.h"
 #include "synch.h"
+#include "errorno.h"
+
+unsigned int errorno;
 
 //----------------------------------------------------------------------
 // UpdatePC : Increments the Program Counter register in order to resume
@@ -176,6 +179,10 @@ ExceptionHandler(ExceptionType which)
 			case SC_UserThreadJoin: {
 				DEBUG ('z', "do_UserThreadJoin\n");
 				machine->WriteRegister(2, do_UserThreadJoin(machine->ReadRegister(4)));
+				break;
+			}
+			case SC_GetErrorNo: {
+				machine->WriteRegister(2, errorno);
 				break;
 			}
 			case SC_Exit: {

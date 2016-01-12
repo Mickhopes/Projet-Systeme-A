@@ -201,6 +201,14 @@ UserThreadJoin:
 	j	$31
 	.end UserThreadJoin
 
+	.globl GetErrorNo
+	.ent	GetErrorNo
+GetErrorNo:
+	addiu $2,$0,SC_GetErrorNo
+	syscall
+	j	$31
+	.end GetErrorNo
+
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

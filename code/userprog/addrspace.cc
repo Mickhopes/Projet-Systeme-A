@@ -345,30 +345,35 @@ AddrSpace::GetNbUserThreads () {
 }
 
 //----------------------------------------------------------------------
-// AddrSpace::ExistsUserThread
+// AddrSpace::IsJoinableUserThread
 //      Return -1 if the thread threadId isn't running, 0 otherwise.
 //      -2 if thread is already waited by another thread
+//      -3 if a deadlock is detected
 //----------------------------------------------------------------------
 
 int
-AddrSpace::ExistsUserThread (unsigned int threadId) {
+AddrSpace::IsJoinableUserThread (unsigned int threadId, unsigned int joinId) {
     mutex->P();
 
+    int find = -1;
     struct ThreadId *curr = IDList;
     while(curr != NULL) {
-        if (curr->id == threadId) {
-            if (curr->waited == 1) {
+        if (curr->id == joinId && curr->waited == threadId) {
+            mutex->V();
+            return -3;
+        } else if (curr->id == threadId) {
+            if (curr->waited > 0) {
+                mutex->V();
                 return -2;
             }
-            return 0;
+            find = 0;
         }
-
         curr = curr->next;
     }
 
     mutex->V();
 
-    return -1;
+    return find;
 }
 
 //----------------------------------------------------------------------
@@ -377,13 +382,13 @@ AddrSpace::ExistsUserThread (unsigned int threadId) {
 //----------------------------------------------------------------------
 
 void
-AddrSpace::WaitForThread (unsigned int threadId, Semaphore *semJoin) {
+AddrSpace::WaitForThread (unsigned int threadId, unsigned int joinId, Semaphore *semJoin) {
     mutex->P();
 
     struct ThreadId *curr = IDList;
     while(curr != NULL) {
         if (curr->id == threadId) {
-            curr->waited = 1;
+            curr->waited = joinId;
             curr->sem = semJoin;
 
             mutex->V();
