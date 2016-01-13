@@ -225,21 +225,21 @@ DestroySemaphore:
 	j	$31
 	.end DestroySemaphore
 	
-	.globl DecrementSemaphore
-	.ent	DecrementSemaphore
-DecrementSemaphore:
-	addiu $2,$0,SC_DecrementSemaphore
+	.globl P
+	.ent	P
+P:
+	addiu $2,$0,SC_P
 	syscall
 	j	$31
-	.end DecrementSemaphore
+	.end P
 	
-	.globl IncrementSemaphore
-	.ent	IncrementSemaphore
-IncrementSemaphore:
-	addiu $2,$0,SC_IncrementSemaphore
+	.globl V
+	.ent	V
+V:
+	addiu $2,$0,SC_V
 	syscall
 	j	$31
-	.end IncrementSemaphore
+	.end V
 
 /* dummy function to keep gcc happy */
         .globl  __main

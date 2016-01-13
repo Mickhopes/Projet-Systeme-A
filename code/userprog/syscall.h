@@ -42,8 +42,8 @@
 #define SC_GetErrorNo 20
 #define SC_InitSemaphore 21
 #define SC_DestroySemaphore 22
-#define SC_DecrementSemaphore 23
-#define SC_IncrementSemaphore 24
+#define SC_P 23
+#define SC_V 24
 
 #ifdef IN_USER_MODE
 
@@ -180,13 +180,13 @@ int GetErrorNo();
 typedef Semaphore sem_t
 
 
-sem_t *SC_InitSemaphore(char *name, int valueInit);
+void InitSemaphore(sem_t *userSem, char *name, int valueInit);
  
 void DestroySemaphore(sem_t *s);
 
-void DecrementSemaphore(sem_t *s);
+void P(sem_t *s);
 
-void IncrementSemaphore(sem_t *s); 
+void V(sem_t *s); 
 
 
 

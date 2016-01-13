@@ -186,8 +186,8 @@ ExceptionHandler(ExceptionType which)
 				break;
 			}
 			case SC_InitSemaphore: {
-				sem_t *sema = new Semaphore(machine->ReadRegister(4), machine->ReadRegister(5))
-				machine->WrireRegister(2,(int)sema);
+				sem_t *sema = new Semaphore(machine->ReadRegister(4), machine->ReadRegister(5));
+				
 				break;
 			}
 			case SC_DestroySemaphore: {
@@ -195,12 +195,12 @@ ExceptionHandler(ExceptionType which)
 				((sem_t *)sem)->~Semaphore();
 				break;
 			}
-			case SC_DecrementSemaphore: {
+			case SC_P: {
 				int sem = machine->ReadRegister(4);
 				((sem_t *)sem)->P();
 				break;
 			}
-			case SC_IncrementSemaphore: {
+			case SC_S: {
 				int sem = machine->ReadRegister(4);
 				((sem_t *)sem)->V();
 				break;
