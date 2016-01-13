@@ -206,7 +206,10 @@ ExceptionHandler(ExceptionType which)
 				break;
 			}*/
 			case SC_ForkExec: {
-				
+				int mips_pointer = machine->ReadRegister(4); // We get the MIPS pointer to the string in argument
+				char linux_pointer[MAX_STRING_SIZE];
+				copyStringFromMachine(mips_pointer, linux_pointer, MAX_STRING_SIZE-1);
+				machine->WriteRegister(2,do_NewProcess(linux_pointer));
 				break;
 			}
 			case SC_Exit: {
@@ -223,7 +226,17 @@ ExceptionHandler(ExceptionType which)
 
 				int ret = machine->ReadRegister(4);
 				printf("Return Value of main: %d\n", ret);
-				interrupt->Halt();
+
+				semNumProc->P();
+				if (numProc == 1){
+					semNumProc->V();
+					interrupt->Halt();
+				}else{
+					numProc--;
+					semNumProc->V();
+					delete currentThread->space;
+					currentThread->Finish();
+				}
 				break;
 			}
 			default: {

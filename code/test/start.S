@@ -208,6 +208,14 @@ GetErrorNo:
 	syscall
 	j	$31
 	.end GetErrorNo
+
+	.globl ForkExec
+	.ent	ForkExec
+ForkExec:
+	addiu $2,$0,SC_ForkExec
+	syscall
+	j	$31
+	.end ForkExec
 	
 /*	.globl InitSemaphore
  *	.ent	InitSemaphore

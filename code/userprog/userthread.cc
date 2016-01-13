@@ -100,3 +100,37 @@ int do_UserThreadJoin(unsigned int threadId){
 
 	return 0;
 }
+
+int
+do_NewProcess (char *filename)
+{
+	DEBUG ('z', "do_NewProcess\n");
+    OpenFile *executable = fileSystem->Open (filename);
+    AddrSpace *space;
+
+    if (executable == NULL)
+      {
+	  printf ("Unable to open file %s\n", filename);
+	  return -1;
+      }
+    space = new AddrSpace (executable);
+    Thread *newThread = new Thread("Proc");
+    
+    newThread->space = space;
+    newThread->id = newThread->FindThreadId();
+
+    delete executable;		// close file
+
+    //Increase number of process running. (We need it for exit)
+    semNumProc->P();
+    numProc++;
+    semNumProc->V();
+
+    IntStatus oldLevel = interrupt->SetLevel (IntOff);
+    scheduler->ReadyToRun(newThread);	// ReadyToRun assumes that interrupts
+    // are disabled!
+    (void) interrupt->SetLevel (oldLevel);
+
+    //machine->Run();
+    return newThread->id;
+}

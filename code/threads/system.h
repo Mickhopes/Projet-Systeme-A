@@ -40,6 +40,8 @@ extern Timer *timer;		// the hardware alarm clock
 extern Machine *machine;	// user program memory and registers
 extern SynchConsole *synchconsole;
 extern FrameProvider *frameProvider;
+extern unsigned int numProc;
+extern Semaphore *semNumProc;
 #endif //USER_PROGRAM
 
 #ifdef FILESYS_NEEDED		// FILESYS or FILESYS_STUB

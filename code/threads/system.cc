@@ -31,6 +31,8 @@ SynchDisk *synchDisk;
 Machine *machine;		// user program memory and registers
 SynchConsole *synchconsole;
 FrameProvider *frameProvider;
+unsigned int numProc;
+Semaphore *semNumProc;
 #endif
 
 #ifdef NETWORK
@@ -161,6 +163,8 @@ Initialize (int argc, char **argv)
     machine = new Machine (debugUserProg);	// this must come first
 	synchconsole = new SynchConsole (NULL, NULL);
 	frameProvider = new FrameProvider(NumPhysPages);
+	numProc = 1;//Number process = 1 because it's the first proc running.
+	semNumProc = new Semaphore("mutex for process number",1);
 #endif
 
 #ifdef FILESYS
