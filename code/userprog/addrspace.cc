@@ -94,19 +94,20 @@ AddrSpace::AddrSpace (OpenFile * executable)
     numPages = divRoundUp (size, PageSize);
     size = numPages * PageSize;
 
-    ASSERT (numPages <= NumPhysPages);	// check we're not trying
+    ASSERT (numPages <= frameProvider->NumAvailFrame());	// check we're not trying
     // to run anything too big --
     // at least until we have
     // virtual memory
 
     DEBUG ('a', "Initializing address space, num pages %d, size %d\n",
 	   numPages, size);
+
 // first, set up the translation 
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++)
       {
 	  pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-	  pageTable[i].physicalPage = i+1;
+	  pageTable[i].physicalPage = /*i+1;*/ frameProvider->GetEmptyFrame();
 	  pageTable[i].valid = TRUE;
 	  pageTable[i].use = FALSE;
 	  pageTable[i].dirty = FALSE;
@@ -117,7 +118,7 @@ AddrSpace::AddrSpace (OpenFile * executable)
 
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
-    bzero (machine->mainMemory, size);
+    //bzero (machine->mainMemory, size);
 
 // then, copy in the code and data segments into memory
     if (noffH.code.size > 0)
@@ -153,6 +154,13 @@ AddrSpace::AddrSpace (OpenFile * executable)
 
 AddrSpace::~AddrSpace ()
 {
+    // We release all the frames used by this address space
+    unsigned int i;
+    for (i = 0; i < numPages; i++)
+    {
+        frameProvider->ReleaseFrame(pageTable[i].physicalPage);
+    }
+
     // LB: Missing [] for delete
     // delete pageTable;
     delete [] pageTable;

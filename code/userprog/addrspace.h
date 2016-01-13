@@ -16,12 +16,13 @@
 #include "copyright.h"
 #include "filesys.h"
 #include "synch.h"
-
-#define UserStackSize		1024	// increase this as necessary!
+#include "frameprovider.h"
 
 #define NbPageUserThread 2 // Number of pages for a user thread
 
 #define MaxUserThreads 12
+
+#define UserStackSize   MaxUserThreads*PageSize*NbPageUserThread  // increase this as necessary!
 
 class Semaphore;
 
