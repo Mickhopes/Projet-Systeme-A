@@ -14,6 +14,7 @@
 #define SYSCALLS_H
 
 #include "copyright.h"
+#include "sync.h"
 
 /* system call codes -- used by the stubs to tell the kernel which system call
  * is being asked for
@@ -39,6 +40,10 @@
 #define SC_UserThreadExit 18
 #define SC_UserThreadJoin 19
 #define SC_GetErrorNo 20
+#define SC_InitSemaphore 21
+#define SC_DestroySemaphore 22
+#define SC_DecrementSemaphore 23
+#define SC_IncrementSemaphore 24
 
 #ifdef IN_USER_MODE
 
@@ -167,6 +172,25 @@ int UserThreadJoin (unsigned int threadId);
 
 /* Get the error number */
 int GetErrorNo();
+
+/*-------------------------------------------
+	Semaphore for user's utilisatrion
+------------------------------------------*/
+
+typedef Semaphore sem_t
+
+
+sem_t *SC_InitSemaphore(char *name, int valueInit);
+ 
+void DestroySemaphore(sem_t *s);
+
+void DecrementSemaphore(sem_t *s);
+
+void IncrementSemaphore(sem_t *s); 
+
+
+
+
 
 #endif // IN_USER_MODE
 
