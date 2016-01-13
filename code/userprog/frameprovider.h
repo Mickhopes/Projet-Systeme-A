@@ -10,7 +10,7 @@ class FrameProvider{
 
 		int GetEmptyFrame();
 		void ReleaseFrame(int frame);
-		int NumAvailFrame();
+		unsigned int NumAvailFrame();
 	private:
 		BitMap *map;
 };

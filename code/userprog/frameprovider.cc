@@ -1,4 +1,7 @@
 #include "frameprovider.h"
+#include "system.h"
+#include "machine.h"
+#include <strings.h> //For bzero
 
 
 FrameProvider::FrameProvider (int numpages)
@@ -27,7 +30,9 @@ FrameProvider::~FrameProvider ()
 int
 FrameProvider::GetEmptyFrame ()
 {
-   
+	int frame = map->Find();
+	bzero (machine->mainMemory+frame*PageSize, PageSize);
+	return frame;
 }
 
 //----------------------------------------------------------------------
@@ -39,7 +44,7 @@ FrameProvider::GetEmptyFrame ()
 void
 FrameProvider::ReleaseFrame (int frame)
 {
-   
+   map->Clear(frame);
 }
 
 //----------------------------------------------------------------------
@@ -48,8 +53,8 @@ FrameProvider::ReleaseFrame (int frame)
 //
 //      
 //----------------------------------------------------------------------
-int
+unsigned int
 FrameProvider::NumAvailFrame ()
 {
-   
+   return map->NumClear();
 }
