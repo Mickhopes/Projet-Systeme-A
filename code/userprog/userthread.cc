@@ -104,7 +104,7 @@ int do_UserThreadJoin(unsigned int threadId){
 int
 do_NewProcess (char *filename)
 {
-	DEBUG ('z', "do_NewProcess\n");
+	DEBUG ('y', "do_NewProcess\n");
     OpenFile *executable = fileSystem->Open (filename);
     AddrSpace *space;
 
@@ -125,6 +125,9 @@ do_NewProcess (char *filename)
     semNumProc->P();
     numProc++;
     semNumProc->V();
+
+    newThread->space->InitRegisters();
+    newThread->space->RestoreState();
 
     IntStatus oldLevel = interrupt->SetLevel (IntOff);
     scheduler->ReadyToRun(newThread);	// ReadyToRun assumes that interrupts

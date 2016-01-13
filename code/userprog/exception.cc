@@ -224,17 +224,22 @@ ExceptionHandler(ExceptionType which)
 				currentThread->space->semWaitUserThreads->P();
 				DEBUG ('z', "%s a pris semaphore pour terminer\n",currentThread->getName());
 
-				int ret = machine->ReadRegister(4);
-				printf("Return Value of main: %d\n", ret);
+				//int ret = machine->ReadRegister(4);
+				//printf("Return Value of main: %d\n", ret);
 
+				DEBUG ('y', "Avant prise semaphore sur le thread %s\n",currentThread->getName());
 				semNumProc->P();
+				DEBUG ('y', "Apres prise semaphore sur le thread %s\n",currentThread->getName());
 				if (numProc == 1){
+					DEBUG ('y', "Avant Halt sur le thread %s\n",currentThread->getName());
 					semNumProc->V();
 					interrupt->Halt();
 				}else{
+					DEBUG ('y', "Avant décrémentation sur le thread %s\n",currentThread->getName());
 					numProc--;
 					semNumProc->V();
 					delete currentThread->space;
+					DEBUG ('y', "Avant finish sur le thread %s\n",currentThread->getName());
 					currentThread->Finish();
 				}
 				break;
