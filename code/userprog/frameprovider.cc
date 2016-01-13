@@ -3,7 +3,6 @@
 #include "machine.h"
 #include <strings.h> //For bzero
 
-
 FrameProvider::FrameProvider (int numpages)
 {
     map = new BitMap(numpages);
@@ -23,9 +22,7 @@ FrameProvider::~FrameProvider ()
 
 //----------------------------------------------------------------------
 // FrameProvider::GetEmptyFrame
-//      
-//
-//      
+//      Get an empty frame available and initialize it to 0
 //----------------------------------------------------------------------
 int
 FrameProvider::GetEmptyFrame ()
@@ -37,9 +34,9 @@ FrameProvider::GetEmptyFrame ()
 
 //----------------------------------------------------------------------
 // FrameProvider::ReleaseFrame
-//      
+//      Release the frame given in parameter
 //
-//      
+//		"frame" - The frame number to release  
 //----------------------------------------------------------------------
 void
 FrameProvider::ReleaseFrame (int frame)
@@ -49,9 +46,7 @@ FrameProvider::ReleaseFrame (int frame)
 
 //----------------------------------------------------------------------
 // FrameProvider::NumAvailFrame
-//      
-//
-//      
+//      Return the number of frames available  
 //----------------------------------------------------------------------
 unsigned int
 FrameProvider::NumAvailFrame ()
