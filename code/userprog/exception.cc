@@ -185,7 +185,7 @@ ExceptionHandler(ExceptionType which)
 				machine->WriteRegister(2, errorno);
 				break;
 			}
-			case SC_InitSemaphore: {
+			/*case SC_InitSemaphore: {
 				sem_t *sema = new Semaphore(machine->ReadRegister(4), machine->ReadRegister(5));
 				
 				break;
@@ -204,7 +204,7 @@ ExceptionHandler(ExceptionType which)
 				int sem = machine->ReadRegister(4);
 				((sem_t *)sem)->V();
 				break;
-			}
+			}*/
 			case SC_Exit: {
 				//TODO :
 				//Notez que le programme principal ne doit pas appeler la fonction Halt tant que les threads

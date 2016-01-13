@@ -3,16 +3,17 @@
 #define NULL 0
 
 int varGlob = 0;
-sem_t *mutex;
+//sem_t *mutex;
 
 void incremente(void* arg) {
 	
 	//sem
-	P(mutex);
-	for (int i = 0; i < 5; i++){
+	//P(mutex);
+	int i = 0;
+	for (i = 0; i < 5; i++){
 		varGlob++;
 	}
-	V(mutex);
+	//V(mutex);
 	//fin sem
 	
 	UserThreadExit();
@@ -22,7 +23,8 @@ void incremente(void* arg) {
 int main(){
 
 	int id[3];
-	mutex = InitSemaphore("mutex",1);
+	int i;
+	//mutex = InitSemaphore("mutex",1);
 	if((id[0] = UserThreadCreate(incremente,(void*)  5)) != -1){
 		//PutString("Je suis le premier !\n");
 	}
@@ -33,10 +35,10 @@ int main(){
 		//PutString("Je suis le troisieme !\n");
 	}
 
-	for (int i = 0; i < 3; i++){
+	for (i = 0; i < 3; i++){
 		UserThreadJoin(id[i]);	
 	}
-	DestroySemaphore(mutex);
+	//DestroySemaphore(mutex);
 
 	PutString("Resultat attendu : 12, reel : ");
 	PutInt(varGlob);

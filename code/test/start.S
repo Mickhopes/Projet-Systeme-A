@@ -209,37 +209,38 @@ GetErrorNo:
 	j	$31
 	.end GetErrorNo
 	
-	.globl InitSemaphore
-	.ent	InitSemaphore
-InitSemaphore:
-	addiu $2,$0,SC_InitSemaphore
-	syscall
-	j	$31
-	.end InitSemaphore
-	
-	.globl DestroySemaphore
-	.ent	DestroySemaphore
-DestroySemaphore:
-	addiu $2,$0,SC_DestroySemaphore
-	syscall
-	j	$31
-	.end DestroySemaphore
-	
-	.globl P
-	.ent	P
-P:
-	addiu $2,$0,SC_P
-	syscall
-	j	$31
-	.end P
-	
-	.globl V
-	.ent	V
-V:
-	addiu $2,$0,SC_V
-	syscall
-	j	$31
-	.end V
+/*	.globl InitSemaphore
+ *	.ent	InitSemaphore
+ *InitSemaphore:
+ *	addiu $2,$0,SC_InitSemaphore
+ *	syscall
+ *	j	$31
+ * 	.end InitSemaphore
+ *	
+ *	.globl DestroySemaphore
+ *	.ent	DestroySemaphore
+ *DestroySemaphore:
+ *	addiu $2,$0,SC_DestroySemaphore
+ *	syscall
+ *	j	$31
+ *	.end DestroySemaphore
+ *	
+ *	.globl DecrementSemaphore
+ *	.ent	DecrementSemaphore
+ *DecrementSemaphore:
+ *	addiu $2,$0,SC_DecrementSemaphore
+ *	syscall
+ *	j	$31
+ *	.end DecrementSemaphore
+ *	
+ *	.globl IncrementSemaphore
+ *	.ent	IncrementSemaphore
+ *IncrementSemaphore:
+ *	addiu $2,$0,SC_IncrementSemaphore
+ *	syscall
+ *	j	$31
+ *	.end IncrementSemaphore
+ */
 
 /* dummy function to keep gcc happy */
         .globl  __main
