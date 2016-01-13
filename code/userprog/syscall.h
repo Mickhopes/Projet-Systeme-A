@@ -44,6 +44,7 @@
 #define SC_DestroySemaphore 22
 #define SC_P 23
 #define SC_V 24*/
+#define SC_ForkExec 25
 
 #ifdef IN_USER_MODE
 
@@ -173,6 +174,9 @@ int UserThreadJoin (unsigned int threadId);
 /* Get the error number */
 int GetErrorNo();
 
+/* Run the program given in a new process */
+int ForkExec(char *s);
+
 /*-------------------------------------------
 	Semaphore for user's utilisatrion
 ------------------------------------------*/
@@ -187,9 +191,6 @@ void DestroySemaphore(sem_t *s);
 void P(sem_t *s);
 
 void V(sem_t *s); */
-
-
-
 
 
 #endif // IN_USER_MODE

@@ -205,6 +205,10 @@ ExceptionHandler(ExceptionType which)
 				((sem_t *)sem)->V();
 				break;
 			}*/
+			case SC_ForkExec: {
+				
+				break;
+			}
 			case SC_Exit: {
 				//TODO :
 				//Notez que le programme principal ne doit pas appeler la fonction Halt tant que les threads
