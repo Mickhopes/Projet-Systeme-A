@@ -1,6 +1,8 @@
 #include "syscall.h"
+
 #define THIS "aaa"
 #define THAT "bbb"
+
 const int N = 10; // Choose it large enough!
 
 void puts(char *s){
@@ -22,7 +24,6 @@ void g(void *s){
 	for (i = 0; i < N; i++){
 		puts((char *)s);
 	}
-	UserThreadExit();
 }
 
 int main() {

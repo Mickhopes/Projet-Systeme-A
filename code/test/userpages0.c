@@ -9,7 +9,6 @@ void print(void* arg) {
 	for (i = 0; i < 10; i++){
 		PutChar((int)arg + i);	
 	}
-	UserThreadExit();
 }
 
 

@@ -43,7 +43,7 @@ THREAD_SRC      :=      main.cc list.cc scheduler.cc synch.cc synchlist.cc \
 
 USERPROG_SRC    :=      addrspace.cc bitmap.cc exception.cc progtest.cc console.cc \
                         synchconsole.cc machine.cc mipssim.cc translate.cc \
-						userthread.cc frameprovider.cc
+						userthread.cc frameprovider.cc userfork.cc
 
 VM_SRC          :=
 

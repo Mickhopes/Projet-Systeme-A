@@ -19,7 +19,4 @@ extern void do_UserThreadExit();
 /* Wait for the user thread threadId to finish */
 extern int do_UserThreadJoin(unsigned int threadId);
 
-/* Create a new process with the ForkExec syscall */
-extern int do_NewProcess (char *filename);
-
 #endif /* USERTHREAD_H */

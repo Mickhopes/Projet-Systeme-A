@@ -130,6 +130,23 @@ Thread::Fork (VoidFunctionPtr func, int arg)
     (void) interrupt->SetLevel (oldLevel);
 }
 
+void
+Thread::ForkExec (VoidFunctionPtr func, int arg)
+{
+    DEBUG ('t', "Forking thread \"%s\" with func = 0x%x, arg = %d\n",
+     name, (int) func, arg);
+
+    StackAllocate (func, arg);
+
+    // Here we get rid of the instruction below in order to start a new process
+    // this->space = currentThread->space;
+
+    IntStatus oldLevel = interrupt->SetLevel (IntOff);
+    scheduler->ReadyToRun (this); // ReadyToRun assumes that interrupts 
+    // are disabled!
+    (void) interrupt->SetLevel (oldLevel);
+}
+
 //----------------------------------------------------------------------
 // Thread::CheckOverflow
 //      Check a thread's stack to see if it has overrun the space

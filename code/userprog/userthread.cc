@@ -7,20 +7,20 @@
 #include "errorno.h"
 
 /* We initialize and set the registers to call the function and then we run the machine */
-static void StartUserThread(int f) {
+static void StartUserThread(int arg) {
 	// Initialization of registers
 	currentThread->space->InitRegisters();
 	currentThread->space->RestoreState();
 
 	// We're setting the registers for the called function
-	machine->WriteRegister(StackReg,(int)((ThreadArgs*)f)->stackAddr); // Stack pointer Address
-	machine->WriteRegister(PCReg, (int)((ThreadArgs*)f)->func); // Address of the called function
-    machine->WriteRegister(NextPCReg, (int)(((ThreadArgs*)f)->func)+4); // Address of the next instruction of the called function
-    machine->WriteRegister(RetAddrReg, (int)((ThreadArgs*)f)->funcReturn); // Address to the function to return to. UserThreadExit in our case
-    machine->WriteRegister(4, ((ThreadArgs*)f)->arg); // Argument of the called function
+	machine->WriteRegister(StackReg,(int)((ThreadArgs*)arg)->stackAddr); // Stack pointer Address
+	machine->WriteRegister(PCReg, (int)((ThreadArgs*)arg)->func); // Address of the called function
+    machine->WriteRegister(NextPCReg, (int)(((ThreadArgs*)arg)->func)+4); // Address of the next instruction of the called function
+    machine->WriteRegister(RetAddrReg, (int)((ThreadArgs*)arg)->funcReturn); // Address to the function to return to. UserThreadExit in our case
+    machine->WriteRegister(4, ((ThreadArgs*)arg)->arg); // Argument of the called function
 
-    DEBUG ('z', "%d : StackReg [%d], PCReg [%d], NextPCReg [%d], Reg4 [%d]\n",currentThread->id,(int)((ThreadArgs*)f)->stackAddr,(int)((ThreadArgs*)f)->func,(int)(((ThreadArgs*)f)->func)+4,((ThreadArgs*)f)->arg);
-	delete (struct ThreadArgs*)f;
+    DEBUG ('z', "%d : StackReg [%d], PCReg [%d], NextPCReg [%d], Reg4 [%d]\n",currentThread->id,(int)((ThreadArgs*)arg)->stackAddr,(int)((ThreadArgs*)arg)->func,(int)(((ThreadArgs*)arg)->func)+4,((ThreadArgs*)arg)->arg);
+	delete (struct ThreadArgs*)arg;
 	machine->Run();
 }
 
@@ -105,41 +105,4 @@ int do_UserThreadJoin(unsigned int threadId){
 	currentThread->space->WaitForThread(threadId, currentThread->id, currentThread->semJoin);
 
 	return 0;
-}
-
-int
-do_NewProcess (char *filename)
-{
-	DEBUG ('y', "do_NewProcess\n");
-    OpenFile *executable = fileSystem->Open (filename);
-    AddrSpace *space;
-
-    if (executable == NULL)
-      {
-	  printf ("Unable to open file %s\n", filename);
-	  return -1;
-      }
-    space = new AddrSpace (executable);
-    Thread *newThread = new Thread("Proc");
-    
-    newThread->space = space;
-    newThread->id = newThread->FindThreadId();
-
-    delete executable;		// close file
-
-    //Increase number of process running. (We need it for exit)
-    semNumProc->P();
-    numProc++;
-    semNumProc->V();
-
-    newThread->space->InitRegisters();
-    newThread->space->RestoreState();
-
-    IntStatus oldLevel = interrupt->SetLevel (IntOff);
-    scheduler->ReadyToRun(newThread);	// ReadyToRun assumes that interrupts
-    // are disabled!
-    (void) interrupt->SetLevel (oldLevel);
-
-    //machine->Run();
-    return newThread->id;
 }

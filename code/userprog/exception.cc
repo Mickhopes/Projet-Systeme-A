@@ -25,6 +25,7 @@
 #include "system.h"
 #include "syscall.h"
 #include "userthread.h"
+#include "userfork.h"
 #include "synch.h"
 #include "errorno.h"
 
@@ -212,19 +213,14 @@ ExceptionHandler(ExceptionType which)
 				break;
 			}
 			case SC_ForkExec: {
+				DEBUG ('z', "do_ForkExec\n");
 				int mips_pointer = machine->ReadRegister(4); // We get the MIPS pointer to the string in argument
 				char linux_pointer[MAX_STRING_SIZE];
 				copyStringFromMachine(mips_pointer, linux_pointer, MAX_STRING_SIZE-1);
-				machine->WriteRegister(2,do_NewProcess(linux_pointer));
+				machine->WriteRegister(2,do_ForkExec(linux_pointer));
 				break;
 			}
 			case SC_Exit: {
-				//TODO :
-				//Notez que le programme principal ne doit pas appeler la fonction Halt tant que les threads
-				//utilisateurs n’ont pas appelé UserThreadExit! 
-				
-				//possibilite numero 2 : Le main coupe tout les thread en libérant toutes les ressources avant de se quitter
-
 				//Prise du semaphore qui garantit que les User threads sont tous terminés.
 				DEBUG ('z', "%s attend semaphore pour terminer\n",currentThread->getName());
 				currentThread->space->semWaitUserThreads->P();
