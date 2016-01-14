@@ -22,7 +22,7 @@
 
 #define MaxUserThreads 12
 
-#define UserStackSize   MaxUserThreads*PageSize*NbPageUserThread  // increase this as necessary!
+#define UserStackSize (MaxUserThreads*PageSize*NbPageUserThread + 2*PageSize)  // increase this as necessary!
 
 class Semaphore;
 
