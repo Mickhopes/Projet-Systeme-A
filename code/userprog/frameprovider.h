@@ -15,7 +15,4 @@ class FrameProvider{
 		BitMap *map;
 };
 
-
-
-
 #endif //FRAMEPROVIDER_H

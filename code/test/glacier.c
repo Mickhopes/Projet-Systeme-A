@@ -1,7 +1,8 @@
 #include "syscall.h"
 
 #define M 4
-#define NbThreads 6
+#define NbThreads 10
+
 int nb_glaces;
 sem_t dring;
 sem_t vente;
@@ -13,23 +14,19 @@ void acheter_glace() {
     PutInt(nb_glaces);
     PutChar('\n');
     V(dring);
-    //UserThreadExit();
 }
 
 void recharger_glace() {
-    int recharge = 1;
-    while(recharge) {
+    while(1) {
         P(dring);
         PutString("le glacier est reveille\n");
         if (nb_glaces == 0) {
             nb_glaces += M;
-            recharge --;
             PutString("le glacier a rechargé\n");
         }
         PutString("le glacier libere et se rendort\n");
         V(vente);
     }
-    //UserThreadExit();
 }
 
 int main (){
@@ -38,14 +35,14 @@ int main (){
     vente = InitSemaphore("vente", 1);
     nb_glaces = M;
 
+    UserThreadCreate(recharger_glace, 0);
     int i;
-    for (i = 1; i < NbThreads; i++){
+    for (i = 0; i < NbThreads; i++){
         UserThreadCreate(acheter_glace, 0);
     }
-    UserThreadCreate(recharger_glace, 0);
 
     /* Wait until every thread ened */ 
-    for (i = 1; i <= NbThreads; i++){
+    for (i = 1; i <= NbThreads+1; i++){
         UserThreadJoin(i);
     }
 
