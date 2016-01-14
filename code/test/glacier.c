@@ -13,7 +13,7 @@ void acheter_glace() {
     PutInt(nb_glaces);
     PutChar('\n');
     V(dring);
-    UserThreadExit();
+    //UserThreadExit();
 }
 
 void recharger_glace() {
@@ -29,7 +29,7 @@ void recharger_glace() {
         PutString("le glacier libere et se rendort\n");
         V(vente);
     }
-    UserThreadExit();
+    //UserThreadExit();
 }
 
 int main (){

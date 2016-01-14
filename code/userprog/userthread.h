@@ -4,13 +4,14 @@
 #include "utility.h"
 
 struct ThreadArgs {
-	VoidFunctionPtr func; 
+	VoidFunctionPtr func;
+	VoidFunctionPtr funcReturn;
 	int arg;
 	int stackAddr;
 };
 
 /* Create a user thread */
-extern int do_UserThreadCreate(int f, int arg);
+extern int do_UserThreadCreate(int f, int arg, int fReturn);
 
 /* End a user thread */
 extern void do_UserThreadExit();

@@ -1,4 +1,3 @@
-//Include car do_UserThreadCreate est extern.
 #include "userthread.h"
 #include "system.h"
 #include "syscall.h"
@@ -7,29 +6,28 @@
 #include "addrspace.h"
 #include "errorno.h"
 
-//TODO : trad les commentaire en anglais ????
-
-/* On initialise puis remplit les registres et on fait Machine::Run() */
+/* We initialize and set the registers to call the function and then we run the machine */
 static void StartUserThread(int f) {
-	//Initialisation des registres.
+	// Initialization of registers
 	currentThread->space->InitRegisters();
 	currentThread->space->RestoreState();
-	//Ecritures dans les registres pour preparer le lancement du thread.
-	machine->WriteRegister(StackReg,(int)((ThreadArgs*)f)->stackAddr);//Adresse du pointeur de pile pour le nouveau thread.
-	machine->WriteRegister(PCReg, (int)((ThreadArgs*)f)->func);
-    machine->WriteRegister(NextPCReg, (int)(((ThreadArgs*)f)->func)+4);
-    machine->WriteRegister(4, ((ThreadArgs*)f)->arg);
+
+	// We're setting the registers for the called function
+	machine->WriteRegister(StackReg,(int)((ThreadArgs*)f)->stackAddr); // Stack pointer Address
+	machine->WriteRegister(PCReg, (int)((ThreadArgs*)f)->func); // Address of the called function
+    machine->WriteRegister(NextPCReg, (int)(((ThreadArgs*)f)->func)+4); // Address of the next instruction of the called function
+    machine->WriteRegister(RetAddrReg, (int)((ThreadArgs*)f)->funcReturn); // Address to the function to return to. UserThreadExit in our case
+    machine->WriteRegister(4, ((ThreadArgs*)f)->arg); // Argument of the called function
 
     DEBUG ('z', "%d : StackReg [%d], PCReg [%d], NextPCReg [%d], Reg4 [%d]\n",currentThread->id,(int)((ThreadArgs*)f)->stackAddr,(int)((ThreadArgs*)f)->func,(int)(((ThreadArgs*)f)->func)+4,((ThreadArgs*)f)->arg);
 	delete (struct ThreadArgs*)f;
 	machine->Run();
 }
 
-int do_UserThreadCreate(int f, int arg) {
+int do_UserThreadCreate(int f, int arg, int fReturn) {
 	Thread *newThread = new Thread("user");
 
 	newThread->space = currentThread->space;
-	//Permet de ne pas copier l'espace d'adressage un autre processus en cours
 
 	newThread->id = newThread->FindThreadId();
 
@@ -38,8 +36,10 @@ int do_UserThreadCreate(int f, int arg) {
 		//Allocation of a new thread is not possible
 		DEBUG ('z', "Creation thread impossible\n");
 		if (address == -1) {
+			// Because there is too much threads
 			errorno = EMAXTHREADS;
 		} else {
+			// Because there is not enough space left
 			errorno = ESPACE;
 		}
 		return -1;
@@ -53,6 +53,7 @@ int do_UserThreadCreate(int f, int arg) {
 
 	struct ThreadArgs *args = new ThreadArgs;
 	args->func = (VoidFunctionPtr) f;
+	args->funcReturn = (VoidFunctionPtr) fReturn;
 	args->arg = arg;
 	args->stackAddr = address;
 
@@ -65,7 +66,7 @@ int do_UserThreadCreate(int f, int arg) {
 
 void do_UserThreadExit(){
 	DEBUG ('z', "Suppression du thread avec ID %d\n",currentThread->id);
-	//Il faut que les User thread appele UserThreadExit avant que le main se termine. CF. userprog/exception.cc AS:SC_Exit(ligne 166)
+
 	Semaphore *sem = currentThread->space->RemoveUserThread(currentThread->idSpace);
 
 	if (currentThread->space->GetNbUserThreads() == 0) {

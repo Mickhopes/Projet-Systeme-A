@@ -168,7 +168,7 @@ ExceptionHandler(ExceptionType which)
 			}
 			case SC_UserThreadCreate: {
 				DEBUG ('z', "do_UserThreadCreate\n");
-				machine->WriteRegister(2,do_UserThreadCreate(machine->ReadRegister(4), machine->ReadRegister(5)));
+				machine->WriteRegister(2,do_UserThreadCreate(machine->ReadRegister(4), machine->ReadRegister(5), machine->ReadRegister(6)));
 				break;
 			}
 			case SC_UserThreadExit: {
