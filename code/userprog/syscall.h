@@ -14,7 +14,6 @@
 #define SYSCALLS_H
 
 #include "copyright.h"
-//#include "synch.h"
 
 /* system call codes -- used by the stubs to tell the kernel which system call
  * is being asked for
@@ -40,10 +39,10 @@
 #define SC_UserThreadExit 18
 #define SC_UserThreadJoin 19
 #define SC_GetErrorNo 20
-/*#define SC_InitSemaphore 21
+#define SC_InitSemaphore 21
 #define SC_DestroySemaphore 22
 #define SC_P 23
-#define SC_V 24*/
+#define SC_V 24
 #define SC_ForkExec 25
 
 #ifdef IN_USER_MODE
@@ -178,19 +177,18 @@ int GetErrorNo();
 int ForkExec(char *s);
 
 /*-------------------------------------------
-	Semaphore for user's utilisatrion
+	Semaphore for user's utilisation
 ------------------------------------------*/
 
-/*typedef Semaphore sem_t
+typedef int sem_t;
 
-
-void InitSemaphore(sem_t *userSem, char *name, int valueInit);
+int InitSemaphore(char *name, int valueInit);
  
-void DestroySemaphore(sem_t *s);
+void DestroySemaphore(sem_t s);
 
-void P(sem_t *s);
+void P(sem_t s);
 
-void V(sem_t *s); */
+void V(sem_t s);
 
 
 #endif // IN_USER_MODE

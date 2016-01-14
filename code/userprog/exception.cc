@@ -185,26 +185,32 @@ ExceptionHandler(ExceptionType which)
 				machine->WriteRegister(2, errorno);
 				break;
 			}
-			/*case SC_InitSemaphore: {
-				sem_t *sema = new Semaphore(machine->ReadRegister(4), machine->ReadRegister(5));
-				
+			case SC_InitSemaphore: {
+				Semaphore *sem = new Semaphore((char*)machine->ReadRegister(4), machine->ReadRegister(5));
+				machine->WriteRegister(2, (int)sem);
+				DEBUG ('s', "Creation semaphore de %d\n", machine->ReadRegister(5));
 				break;
 			}
 			case SC_DestroySemaphore: {
-				int sem = machine->ReadRegister(4);
-				((sem_t *)sem)->~Semaphore();
+				Semaphore *sem = (Semaphore*)machine->ReadRegister(4);
+				DEBUG ('s', "Destruction semaphore\n");
+				delete sem;
 				break;
 			}
 			case SC_P: {
-				int sem = machine->ReadRegister(4);
-				((sem_t *)sem)->P();
+				Semaphore *sem = (Semaphore*)machine->ReadRegister(4);
+				DEBUG ('s', "Avant prise semaphore\n");
+				sem->P();
+				DEBUG ('s', "Apres prise semaphore\n");
 				break;
 			}
-			case SC_S: {
-				int sem = machine->ReadRegister(4);
-				((sem_t *)sem)->V();
+			case SC_V: {
+				Semaphore *sem = (Semaphore*)machine->ReadRegister(4);
+				DEBUG ('s', "Avant relache semaphore\n");
+				sem->V();
+				DEBUG ('s', "Apres relache semaphore\n");
 				break;
-			}*/
+			}
 			case SC_ForkExec: {
 				int mips_pointer = machine->ReadRegister(4); // We get the MIPS pointer to the string in argument
 				char linux_pointer[MAX_STRING_SIZE];

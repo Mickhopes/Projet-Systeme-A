@@ -1,19 +1,17 @@
 #include "syscall.h"
-#include "errorno.h"
-#define NULL 0
 
 int varGlob = 0;
-//sem_t *mutex;
+sem_t mutex;
 
 void incremente(void* arg) {
-	
+	int val = (int)arg;
 	//sem
-	//P(mutex);
+	P(mutex);
 	int i = 0;
-	for (i = 0; i < 5; i++){
+	for (i = 0; i < val; i++){
 		varGlob++;
 	}
-	//V(mutex);
+	V(mutex);
 	//fin sem
 	
 	UserThreadExit();
@@ -24,23 +22,17 @@ int main(){
 
 	int id[3];
 	int i;
-	//mutex = InitSemaphore("mutex",1);
-	if((id[0] = UserThreadCreate(incremente,(void*)  5)) != -1){
-		//PutString("Je suis le premier !\n");
-	}
-	if((id[1] = UserThreadCreate(incremente,(void*)  3)) != -1){
-		//PutString("Je suis le second !\n");
-	}
-	if((id[2] = UserThreadCreate(incremente,(void*)  4)) != -1){
-		//PutString("Je suis le troisieme !\n");
-	}
+	mutex = InitSemaphore("mutex",1);
+	id[0] = UserThreadCreate(incremente,(void*)  125);
+	id[1] = UserThreadCreate(incremente,(void*)  172);
+	id[2] = UserThreadCreate(incremente,(void*)  147);
 
 	for (i = 0; i < 3; i++){
 		UserThreadJoin(id[i]);	
 	}
-	//DestroySemaphore(mutex);
+	DestroySemaphore(mutex);
 
-	PutString("Resultat attendu : 12, reel : ");
+	PutString("Resultat attendu : 444, reel : ");
 	PutInt(varGlob);
 	PutChar('\n');
 	
