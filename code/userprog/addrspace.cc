@@ -245,6 +245,8 @@ AddrSpace::RestoreState ()
 //      Find the first unused ID space in the user thread ID list.
 //      If one is available, it sets the thread ID and it returns
 //		the adress of its stack pointer.
+//      Return -1 if max threads
+//      Return -2 if not enough space available
 //
 //      The ID list begins at 0.
 //----------------------------------------------------------------------
@@ -319,7 +321,7 @@ AddrSpace::FindUserThreadSpace (unsigned int *threadIdSpace, unsigned int thread
     }*/
     if ((machine->ReadRegister(StackReg) - 2*PageSize - ((int)t->idSpace)*PageSize*NbPageUserThread) < (machine->ReadRegister(StackReg) - UserStackSize)) {
         RemoveUserThread(t->idSpace);
-        return -1;
+        return -2;
     }
 
     

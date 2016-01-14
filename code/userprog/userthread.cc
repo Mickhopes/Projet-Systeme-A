@@ -34,9 +34,14 @@ int do_UserThreadCreate(int f, int arg) {
 	newThread->id = newThread->FindThreadId();
 
 	int address = currentThread->space->FindUserThreadSpace(&(newThread->idSpace), newThread->id);
-	if (address == -1){
+	if (address < 0){
 		//Allocation of a new thread is not possible
 		DEBUG ('z', "Creation thread impossible\n");
+		if (address == -1) {
+			errorno = EMAXTHREADS;
+		} else {
+			errorno = ESPACE;
+		}
 		return -1;
 	}
 
