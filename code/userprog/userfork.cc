@@ -22,19 +22,20 @@ do_ForkExec (char *filename)
     AddrSpace *space;
 
     if (executable == NULL)
-      {
+    {
 	  printf ("Unable to open file %s\n", filename);
+	  errorno = EINEX;
 	  return -1;
-      }
+    }
     space = new AddrSpace (executable);
 
     int pid = Thread::FindProcId();
 
-    char name[12];
+    /*char name[12];
     sprintf(name, "processus %d", pid);
-    name[11] = '\0';
+    name[11] = '\0';*/
 
-    Thread *newThread = new Thread(name, -1, pid, currentThread->pid);
+    Thread *newThread = new Thread("processus", -1, pid, currentThread->pid);
     
     newThread->space = space;
 

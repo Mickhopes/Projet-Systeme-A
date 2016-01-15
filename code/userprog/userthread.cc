@@ -28,11 +28,11 @@ int do_UserThreadCreate(int f, int arg, int fReturn) {
 	// We find the next id available
 	int tid = Thread::FindThreadId();
 
-	char name[14];
+	/*char name[14];
 	sprintf(name, "user thread %d", tid);
-	name[13] = '\0';
+	name[13] = '\0';*/
 
-	Thread *newThread = new Thread(name, tid, -1, currentThread->pid);
+	Thread *newThread = new Thread("user thread", tid, -1, currentThread->pid);
 
 	newThread->space = currentThread->space;
 
