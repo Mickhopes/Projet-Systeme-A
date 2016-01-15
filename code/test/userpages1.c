@@ -13,6 +13,7 @@ void puts(char *s){
 }
 
 void f(void *s){
+	PutChar('\n');
 	int i; 
 	for (i = 0; i < N; i++){
 		puts((char *)s);
@@ -20,6 +21,8 @@ void f(void *s){
 }
 
 void g(void *s){
+	PutString("Id du père: ");
+	PutInt(GetPPid());
 	int i; 
 	for (i = 0; i < N; i++){
 		puts((char *)s);
