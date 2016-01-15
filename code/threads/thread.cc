@@ -486,7 +486,6 @@ Thread::FindProcId () {
     numProc = 0;
   }
   int ret = ++numProc;
-  nbProc++;
   semNumProc->V();
 
   return ret;

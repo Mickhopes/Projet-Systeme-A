@@ -243,16 +243,16 @@ ExceptionHandler(ExceptionType which)
 				//int ret = machine->ReadRegister(4);
 				//printf("Return Value of main: %d\n", ret);
 
-				DEBUG ('y', "Avant prise semaphore sur le thread %s\n",currentThread->getName());
+				DEBUG ('y', "Avant prise semaphore numProc sur le thread %s\n",currentThread->getName());
 				semNumProc->P();
-				DEBUG ('y', "Apres prise semaphore sur le thread %s\n",currentThread->getName());
+				DEBUG ('y', "Apres prise semaphore numProc sur le thread %s\n",currentThread->getName());
 				if (nbProc == 1){
 					DEBUG ('y', "Avant Halt sur le thread %s\n",currentThread->getName());
 					semNumProc->V();
 					interrupt->Halt();
 				}else{
-					DEBUG ('y', "Avant décrémentation sur le thread %s\n",currentThread->getName());
 					nbProc--;
+					DEBUG ('y', "%s décrémente nbProc, il reste %d processus\n",currentThread->getName(), nbProc);
 					semNumProc->V();
 					delete currentThread->space;
 					DEBUG ('y', "Avant finish sur le thread %s\n",currentThread->getName());
