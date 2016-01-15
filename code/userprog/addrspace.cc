@@ -48,6 +48,10 @@ SwapHeader (NoffHeader * noffH)
 static int
 ReadAtVirtual(OpenFile *executable, int virtualaddr, int numBytes, int position, TranslationEntry *pageTable, unsigned numPages)
 {
+    // We save the actual pageTable 
+    TranslationEntry *pageTableToSave = machine->pageTable;
+    int numPagesToSave = machine->pageTableSize;
+
     char *buf = new char[numBytes];
     executable->ReadAt(buf, numBytes, position);
 
@@ -59,6 +63,11 @@ ReadAtVirtual(OpenFile *executable, int virtualaddr, int numBytes, int position,
     }
 
     delete [] buf;
+
+    // Then we restore it
+    machine->pageTable = pageTableToSave;
+    machine->pageTableSize = numPagesToSave;
+
     return numBytes;
 }
 
@@ -314,18 +323,15 @@ AddrSpace::FindUserThreadSpace (unsigned int *threadIdSpace, unsigned int thread
 
     mutex->V();
 
-    // If we have no space left
-   /* if ((machine->ReadRegister(StackReg) + 2*PageSize + ((int)t->id)*PageSize*NbPageUserThread) >= (machine->ReadRegister(StackReg) + UserStackSize)) {
-        RemoveUserThread(t->id);
-        return -1;
-    }*/
-    if ((machine->ReadRegister(StackReg) - 2*PageSize - ((int)t->idSpace)*PageSize*NbPageUserThread) < (machine->ReadRegister(StackReg) - UserStackSize)) {
+    int sizeAddr = numPages * PageSize;
+
+    if ((sizeAddr - 2*PageSize - ((int)t->idSpace)*PageSize*NbPageUserThread) < (sizeAddr - UserStackSize)) {
         RemoveUserThread(t->idSpace);
         return -2;
     }
 
     
-    return machine->ReadRegister(StackReg) - 2*PageSize - t->idSpace*PageSize*NbPageUserThread;
+    return sizeAddr - 2*PageSize - t->idSpace*PageSize*NbPageUserThread;
 }
 
 //----------------------------------------------------------------------
