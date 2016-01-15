@@ -11,7 +11,7 @@ static void StartForkExec(int arg) {
 	currentThread->space->InitRegisters();
 	currentThread->space->RestoreState();
 
-	DEBUG('z', "Le processus %s, pid: %d, ppid: %d va se lancer\n", currentThread->getName(), currentThread->pid, currentThread->ppid);
+	DEBUG('z', "Le processus %s, ppid: %d va se lancer\n", currentThread->getName(), currentThread->ppid);
 	machine->Run();
 }
 
@@ -27,7 +27,14 @@ do_ForkExec (char *filename)
 	  return -1;
       }
     space = new AddrSpace (executable);
-    Thread *newThread = new Thread("Proc", -1, Thread::FindProcId(), currentThread->pid);
+
+    int pid = Thread::FindProcId();
+
+    char name[12];
+    sprintf(name, "processus %d", pid);
+    name[11] = '\0';
+
+    Thread *newThread = new Thread(name, -1, pid, currentThread->pid);
     
     newThread->space = space;
 

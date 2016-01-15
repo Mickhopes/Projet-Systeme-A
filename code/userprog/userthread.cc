@@ -25,7 +25,14 @@ static void StartUserThread(int arg) {
 }
 
 int do_UserThreadCreate(int f, int arg, int fReturn) {
-	Thread *newThread = new Thread("user", Thread::FindThreadId(), -1, currentThread->pid);
+	// We find the next id available
+	int tid = Thread::FindThreadId();
+
+	char name[14];
+	sprintf(name, "user thread %d", tid);
+	name[13] = '\0';
+
+	Thread *newThread = new Thread(name, tid, -1, currentThread->pid);
 
 	newThread->space = currentThread->space;
 
@@ -55,7 +62,7 @@ int do_UserThreadCreate(int f, int arg, int fReturn) {
 	args->arg = arg;
 	args->stackAddr = address;
 
-	DEBUG ('z', "Creation du thread avec ID %d\n",newThread->tid);
+	DEBUG ('z', "Creation de %s\n",newThread->getName());
 	newThread->Fork(StartUserThread, (int)args);
 
 	return newThread->tid;
@@ -63,7 +70,7 @@ int do_UserThreadCreate(int f, int arg, int fReturn) {
 
 
 void do_UserThreadExit(){
-	DEBUG ('z', "Suppression du thread avec ID %d\n",currentThread->tid);
+	DEBUG ('z', "Suppression de %s\n",currentThread->getName());
 
 	Semaphore *sem = currentThread->space->RemoveUserThread(currentThread->idSpace);
 
@@ -80,7 +87,7 @@ void do_UserThreadExit(){
 }
 
 int do_UserThreadJoin(unsigned int threadId){
-	DEBUG ('z', "Join du thread %d sur le %d\n",currentThread->tid, threadId);
+	DEBUG ('z', "Join du thread %s sur %d\n",currentThread->getName(), threadId);
 
 	currentThread->semJoin = new Semaphore("Join", 0);
 
