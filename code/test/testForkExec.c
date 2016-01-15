@@ -10,5 +10,9 @@ int main(){
 	PutInt(ForkExec("userpages1"));
 	PutChar('\n');
 
+	PutString("Création troisième processus : ");
+	PutInt(ForkExec("glacier"));
+	PutChar('\n');
+
 	return 0;
 }
