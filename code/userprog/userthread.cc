@@ -19,19 +19,17 @@ static void StartUserThread(int arg) {
     machine->WriteRegister(RetAddrReg, (int)((ThreadArgs*)arg)->funcReturn); // Address to the function to return to. UserThreadExit in our case
     machine->WriteRegister(4, ((ThreadArgs*)arg)->arg); // Argument of the called function
 
-    DEBUG ('z', "%d : StackReg [%d], PCReg [%d], NextPCReg [%d], Reg4 [%d]\n",currentThread->id,(int)((ThreadArgs*)arg)->stackAddr,(int)((ThreadArgs*)arg)->func,(int)(((ThreadArgs*)arg)->func)+4,((ThreadArgs*)arg)->arg);
+    DEBUG ('z', "%d : StackReg [%d], PCReg [%d], NextPCReg [%d], Reg4 [%d]\n",currentThread->tid,(int)((ThreadArgs*)arg)->stackAddr,(int)((ThreadArgs*)arg)->func,(int)(((ThreadArgs*)arg)->func)+4,((ThreadArgs*)arg)->arg);
 	delete (struct ThreadArgs*)arg;
 	machine->Run();
 }
 
 int do_UserThreadCreate(int f, int arg, int fReturn) {
-	Thread *newThread = new Thread("user");
+	Thread *newThread = new Thread("user", Thread::FindThreadId(), -1, currentThread->pid);
 
 	newThread->space = currentThread->space;
 
-	newThread->id = newThread->FindThreadId();
-
-	int address = currentThread->space->FindUserThreadSpace(&(newThread->idSpace), newThread->id);
+	int address = currentThread->space->FindUserThreadSpace(&(newThread->idSpace), newThread->tid);
 	if (address < 0){
 		//Allocation of a new thread is not possible
 		DEBUG ('z', "Creation thread impossible\n");
@@ -57,15 +55,15 @@ int do_UserThreadCreate(int f, int arg, int fReturn) {
 	args->arg = arg;
 	args->stackAddr = address;
 
-	DEBUG ('z', "Creation du thread avec ID %d\n",newThread->id);
+	DEBUG ('z', "Creation du thread avec ID %d\n",newThread->tid);
 	newThread->Fork(StartUserThread, (int)args);
 
-	return newThread->id;
+	return newThread->tid;
 }
 
 
 void do_UserThreadExit(){
-	DEBUG ('z', "Suppression du thread avec ID %d\n",currentThread->id);
+	DEBUG ('z', "Suppression du thread avec ID %d\n",currentThread->tid);
 
 	Semaphore *sem = currentThread->space->RemoveUserThread(currentThread->idSpace);
 
@@ -82,12 +80,12 @@ void do_UserThreadExit(){
 }
 
 int do_UserThreadJoin(unsigned int threadId){
-	DEBUG ('z', "Join du thread %d sur le %d\n",currentThread->id, threadId);
+	DEBUG ('z', "Join du thread %d sur le %d\n",currentThread->tid, threadId);
 
 	currentThread->semJoin = new Semaphore("Join", 0);
 
 	int ret;
-	if ((ret = currentThread->space->IsJoinableUserThread(threadId, currentThread->id)) < 0) {
+	if ((ret = currentThread->space->IsJoinableUserThread(threadId, currentThread->tid)) < 0) {
 		switch(ret) {
 			case -1:
 				errorno = ESRCH;
@@ -102,7 +100,7 @@ int do_UserThreadJoin(unsigned int threadId){
 		return -1;
 	}
 
-	currentThread->space->WaitForThread(threadId, currentThread->id, currentThread->semJoin);
+	currentThread->space->WaitForThread(threadId, currentThread->tid, currentThread->semJoin);
 
 	return 0;
 }

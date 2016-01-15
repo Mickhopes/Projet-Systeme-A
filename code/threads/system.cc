@@ -31,8 +31,10 @@ SynchDisk *synchDisk;
 Machine *machine;		// user program memory and registers
 SynchConsole *synchconsole;
 FrameProvider *frameProvider;
-unsigned int numProc;
+
+unsigned int nbProc;
 Semaphore *semNumProc;
+Semaphore *semNumThread;
 #endif
 
 #ifdef NETWORK
@@ -153,7 +155,7 @@ Initialize (int argc, char **argv)
     // We didn't explicitly allocate the current thread we are running in.
     // But if it ever tries to give up the CPU, we better have a Thread
     // object to save its state. 
-    currentThread = new Thread ("main");
+    currentThread = new Thread ("main", -1, 0, -1);
     currentThread->setStatus (RUNNING);
 
     interrupt->Enable ();
@@ -163,7 +165,9 @@ Initialize (int argc, char **argv)
     machine = new Machine (debugUserProg);	// this must come first
 	synchconsole = new SynchConsole (NULL, NULL);
 	frameProvider = new FrameProvider(NumPhysPages);
-	numProc = 1;//Number process = 1 because it's the first proc running.
+
+	nbProc = 1;
+	semNumThread = new Semaphore("mutex for thread number",1);
 	semNumProc = new Semaphore("mutex for process number",1);
 #endif
 

@@ -11,7 +11,7 @@ static void StartForkExec(int arg) {
 	currentThread->space->InitRegisters();
 	currentThread->space->RestoreState();
 
-	DEBUG('z', "Le processus %s va se lancer\n", currentThread->getName());
+	DEBUG('z', "Le processus %s, pid: %d, ppid: %d va se lancer\n", currentThread->getName(), currentThread->pid, currentThread->ppid);
 	machine->Run();
 }
 
@@ -27,19 +27,18 @@ do_ForkExec (char *filename)
 	  return -1;
       }
     space = new AddrSpace (executable);
-    Thread *newThread = new Thread("Proc");
+    Thread *newThread = new Thread("Proc", -1, Thread::FindProcId(), currentThread->pid);
     
     newThread->space = space;
-    newThread->id = newThread->FindThreadId();
 
     delete executable;		// close file
 
     //Increase number of process running. (We need it for exit)
     semNumProc->P();
-    numProc++;
+    nbProc++;
     semNumProc->V();
 
     newThread->ForkExec(StartForkExec, 0);
 
-    return newThread->id;
+    return newThread->pid;
 }

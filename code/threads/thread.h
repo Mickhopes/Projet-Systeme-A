@@ -57,6 +57,7 @@
 
 #ifdef USER_PROGRAM
 #define ThreadIdThreshold 1500000
+#define ProcIdThreshold 1500000
 #endif
 
 // Thread state
@@ -89,7 +90,8 @@ class Thread
     int machineState[MachineStateSize];	// all registers except for stackTop
 
   public:
-      Thread (const char *debugName);	// initialize a Thread 
+      Thread (const char *debugName);
+      Thread (const char *debugName, int m_tid, int m_pid, int m_ppid);	// initialize a Thread 
      ~Thread ();		// deallocate a Thread
     // NOTE -- thread being deleted
     // must not be running when delete 
@@ -144,14 +146,18 @@ class Thread
   public:
     void SaveUserState ();	// save user-level register state
     void RestoreUserState ();	// restore user-level register state
-    int FindThreadId();
+    static int FindThreadId();
+    static int FindProcId();
 
     AddrSpace *space;		// User code this thread is running.
-    unsigned int id;        // User thread's ID
+    int tid;        // User thread's ID
+    int pid;       // Process ID
+    int ppid;      // Father process ID
     unsigned int idSpace;   // User thread's space ID, used in address space.
     Semaphore *semJoin;         // Semaphore used for join
 
     static unsigned int numThreads;
+    static unsigned int numProc;
 #endif
 };
 

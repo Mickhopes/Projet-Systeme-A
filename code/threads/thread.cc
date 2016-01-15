@@ -26,6 +26,7 @@
 
 #ifdef USER_PROGRAM
 unsigned int Thread::numThreads = 0; // static variable to keep track of thread's IDs
+unsigned int Thread::numProc = 0; // static variable to keep track of process's IDs
 #endif
 
 //----------------------------------------------------------------------
@@ -49,6 +50,30 @@ Thread::Thread (const char *threadName)
     // user threads.
     for (int r=NumGPRegs; r<NumTotalRegs; r++)
       userRegisters[r] = 0;
+
+    semJoin = NULL;
+
+    idSpace = -1;
+#endif
+}
+
+Thread::Thread (const char *threadName, int m_tid, int m_pid, int m_ppid)
+{
+    name = threadName;
+    stackTop = NULL;
+    stack = NULL;
+    status = JUST_CREATED;
+#ifdef USER_PROGRAM
+    space = NULL;
+    // FBT: Need to initialize special registers of simulator to 0
+    // in particular LoadReg or it could crash when switching
+    // user threads.
+    for (int r=NumGPRegs; r<NumTotalRegs; r++)
+      userRegisters[r] = 0;
+
+    tid = m_tid;
+    pid = m_pid;
+    ppid = m_ppid;
 
     semJoin = NULL;
 
@@ -444,11 +469,29 @@ Thread::RestoreUserState ()
 
 int
 Thread::FindThreadId () {
+  semNumThread->P();
   if (numThreads == ThreadIdThreshold) {
     numThreads = 0;
   }
-  return ++numThreads;
+  int ret = ++numThreads;
+  semNumThread->V();
+
+  return ret;
 }
+
+int
+Thread::FindProcId () {
+  semNumProc->P();
+  if (numProc == ProcIdThreshold) {
+    numProc = 0;
+  }
+  int ret = ++numProc;
+  nbProc++;
+  semNumProc->V();
+
+  return ret;
+}
+
 #endif
 
 
