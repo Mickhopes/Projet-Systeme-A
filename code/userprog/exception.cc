@@ -220,7 +220,21 @@ ExceptionHandler(ExceptionType which)
 				machine->WriteRegister(2,do_ForkExec(linux_pointer));
 				break;
 			}
+			case SC_GetTid: {
+				machine->WriteRegister(2, currentThread->tid);
+				break;
+			}
+			case SC_GetPid: {
+				machine->WriteRegister(2, currentThread->pid);
+				break;
+			}
+			case SC_GetPPid: {
+				machine->WriteRegister(2, currentThread->ppid);
+				break;
+			}
 			case SC_Exit: {
+				DEBUG('y', "Exit du processus %s\n", currentThread->getName());
+
 				//Prise du semaphore qui garantit que les User threads sont tous terminés.
 				DEBUG ('z', "%s attend semaphore pour terminer\n",currentThread->getName());
 				currentThread->space->semWaitUserThreads->P();
@@ -232,13 +246,13 @@ ExceptionHandler(ExceptionType which)
 				DEBUG ('y', "Avant prise semaphore sur le thread %s\n",currentThread->getName());
 				semNumProc->P();
 				DEBUG ('y', "Apres prise semaphore sur le thread %s\n",currentThread->getName());
-				if (numProc == 1){
+				if (nbProc == 1){
 					DEBUG ('y', "Avant Halt sur le thread %s\n",currentThread->getName());
 					semNumProc->V();
 					interrupt->Halt();
 				}else{
 					DEBUG ('y', "Avant décrémentation sur le thread %s\n",currentThread->getName());
-					numProc--;
+					nbProc--;
 					semNumProc->V();
 					delete currentThread->space;
 					DEBUG ('y', "Avant finish sur le thread %s\n",currentThread->getName());

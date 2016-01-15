@@ -250,6 +250,29 @@ V:
 	j	$31
 	.end V
 
+	.globl GetTid
+	.ent	GetTid
+GetTid:
+	addiu $2,$0,SC_GetTid
+	syscall
+	j	$31
+	.end GetTid
+
+	.globl GetPid
+	.ent	GetPid
+GetPid:
+	addiu $2,$0,SC_GetPid
+	syscall
+	j	$31
+	.end GetPid
+
+	.globl GetPPid
+	.ent	GetPPid
+GetPPid:
+	addiu $2,$0,SC_GetPPid
+	syscall
+	j	$31
+	.end GetPPid
 
 /* dummy function to keep gcc happy */
         .globl  __main

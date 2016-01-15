@@ -44,6 +44,9 @@
 #define SC_P 23
 #define SC_V 24
 #define SC_ForkExec 25
+#define SC_GetTid 26
+#define SC_GetPid 27
+#define SC_GetPPid 28
 
 #ifdef IN_USER_MODE
 
@@ -175,6 +178,15 @@ int GetErrorNo();
 
 /* Run the program given in a new process */
 int ForkExec(char *s);
+
+/* Return the thread id, -1 if not a thread */
+int GetTid();
+
+/* Return the process id, -1 if not a process */
+int GetPid();
+
+/* Return the father's process id, -1 if no father */
+int GetPPid();
 
 /*-------------------------------------------
 	Semaphore for user's utilisation
