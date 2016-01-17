@@ -13,6 +13,7 @@ class FrameProvider{
 		unsigned int NumAvailFrame();
 	private:
 		BitMap *map;
+		Semaphore *mutex; // Mutex
 };
 
 #endif //FRAMEPROVIDER_H
