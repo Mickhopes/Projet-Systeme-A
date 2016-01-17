@@ -2,6 +2,9 @@
 #define FRAMEPROVIDER_H
 
 #include "bitmap.h"
+#include "synch.h"
+
+class Semaphore;
 
 class FrameProvider{
 	public:
