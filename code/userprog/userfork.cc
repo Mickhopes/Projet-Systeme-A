@@ -14,10 +14,26 @@ static void StartForkExec(int arg) {
 	DEBUG('z', "Le processus %s, ppid: %d va se lancer\n", currentThread->getName(), currentThread->ppid);
 	machine->Run();
 }
-
+/*WARNING if exit or quit is a filename the call thread is stop not correctly
+* if background process if possible change this code is compulsory
+*/
 int
 do_ForkExec (char *filename)
 {
+	if(filename == NULL)
+	{
+		printf("no filename");
+		errorno = EINEX;
+		return -1;
+	}
+	else if(strcmp(filename, "quit") == 0 || strcmp(filename, "exit") == 0)
+	{
+		//TODO change code if autorise background process
+		DEBUG('w', "azertyuiopjhgfdfghjkjhgfdjkghkhqkjeshfkhefkhzemihfQP\n");
+		//currentThread->Finish ();	
+		interrupt->Halt();
+		return 0;
+	}
     OpenFile *executable = fileSystem->Open (filename);
     AddrSpace *space;
 
