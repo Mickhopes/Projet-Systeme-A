@@ -17,22 +17,24 @@
 #include "filesys.h"
 #include "synch.h"
 #include "frameprovider.h"
+#include "bitmap.h"
 
 #define NbPageUserThread 2 // Number of pages for a user thread
+#define NbPageHeap 10 // Number of pages for dynamic allocation
 
 #define MaxUserThreads 12
 
 #define UserStackSize (MaxUserThreads*PageSize*NbPageUserThread + 2*PageSize)  // increase this as necessary!
+#define UserHeapSize NbPageHeap*PageSize
 
 class Semaphore;
+class BitMap;
 
 // Structure for keeping track of used IDs
 struct ThreadId {
   unsigned int id;
-  unsigned int idSpace;
   Semaphore *sem;
-  unsigned int waited;
-  struct ThreadId *next;
+  int waited;
 };
 
 class AddrSpace
@@ -70,6 +72,8 @@ class AddrSpace
     /* Return an incremented id that is unused */
     int FindUserThreadId ();
 
+    int Sbrk(unsigned int n);
+
     Semaphore *semWaitUserThreads;
 
   private:
@@ -78,9 +82,11 @@ class AddrSpace
     unsigned int numPages;	// Number of pages in the virtual 
     // address space
 
-    struct ThreadId *IDList;  // Pointer to the beginning of the ID list
+    ThreadId **threadList;  // Pointer to the beginning of the ID list
+    BitMap *bitmap;
     unsigned int nbThreads; // Number of running user threads
     Semaphore *mutex; // Mutex
+    unsigned int brk;
 };
 
 #endif // ADDRSPACE_H

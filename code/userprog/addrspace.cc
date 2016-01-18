@@ -89,7 +89,7 @@ ReadAtVirtual(OpenFile *executable, int virtualaddr, int numBytes, int position,
 AddrSpace::AddrSpace (OpenFile * executable)
 {
     NoffHeader noffH;
-    unsigned int i, size;
+    unsigned int i, size, sizeCode, numPagesCode;
 
     executable->ReadAt ((char *) &noffH, sizeof (noffH), 0);
     if ((noffH.noffMagic != NOFFMAGIC) &&
@@ -98,9 +98,11 @@ AddrSpace::AddrSpace (OpenFile * executable)
     ASSERT (noffH.noffMagic == NOFFMAGIC);
 
 // how big is address space?
-    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size + UserStackSize;	// we need to increase the size
+    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size + UserStackSize + UserHeapSize;	// we need to increase the size
+    sizeCode = noffH.code.size + noffH.initData.size + noffH.uninitData.size;
     // to leave room for the stack
     numPages = divRoundUp (size, PageSize);
+    numPagesCode = divRoundUp (sizeCode, PageSize);
     size = numPages * PageSize;
 
     ASSERT (numPages <= frameProvider->NumAvailFrame());	// check we're not trying
@@ -117,7 +119,11 @@ AddrSpace::AddrSpace (OpenFile * executable)
       {
 	  pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
 	  pageTable[i].physicalPage = /*i+1;*/ frameProvider->GetEmptyFrame();
-	  pageTable[i].valid = TRUE;
+      if (i >= numPagesCode && i < numPagesCode + NbPageHeap) {
+        pageTable[i].valid = FALSE;
+      } else {
+        pageTable[i].valid = TRUE;
+      }
 	  pageTable[i].use = FALSE;
 	  pageTable[i].dirty = FALSE;
 	  pageTable[i].readOnly = FALSE;	// if the code segment was entirely on 
@@ -150,7 +156,12 @@ AddrSpace::AddrSpace (OpenFile * executable)
       }
 
       // Initialization needed to user threads
-      IDList = NULL;
+      threadList = new ThreadId*[MaxUserThreads];
+      for(i = 0; i < MaxUserThreads; i++) {
+        threadList[i] = NULL;
+      }
+
+      bitmap = new BitMap(MaxUserThreads);
       nbThreads = 0;
       mutex = new Semaphore("mutex", 1);
       semWaitUserThreads = new Semaphore("Waiting for main thread", 1);
@@ -177,13 +188,8 @@ AddrSpace::~AddrSpace ()
 
     delete semWaitUserThreads;
     delete mutex;
-
-    struct ThreadId *prev, *curr = IDList;
-    while(curr != NULL) {
-        prev = curr;
-        curr = curr->next;
-        delete prev;
-   }
+    delete bitmap;
+    delete [] threadList;
 }
 
 //----------------------------------------------------------------------
@@ -264,74 +270,28 @@ int
 AddrSpace::FindUserThreadSpace (unsigned int *threadIdSpace, unsigned int threadId) {
     mutex->P();
 
-    if (nbThreads == MaxUserThreads) {
+    int id = bitmap->Find();
+
+    if (id == -1) {
         mutex->V();
         return -1;
     }
 
-    struct ThreadId *t = new ThreadId;
+    ThreadId *t = new ThreadId;
     t->id = threadId;
-    t->waited = 0;
+    t->waited = -1;
     t->sem = NULL;
 
-	// If we have no user threads running
-    if (nbThreads == 0) {
-        t->idSpace = 0;
-        t->next = NULL;
+    threadList[id] = t;
 
-        IDList = t;
-    } else 
-    {
-		struct ThreadId *prev = NULL, *curr = IDList;
-		// We check our list of threads ID
-        while(curr != NULL) {
-            if (prev == NULL && curr->idSpace > 0) {
-                t->idSpace = 0;
-                t->next = curr;
-
-                IDList = t;
-
-                break;
-            } else if (prev != NULL) {
-                if (curr->idSpace - prev->idSpace > 1) {
-                    t->idSpace = prev->idSpace+1;
-                    t->next = curr;
-
-                    prev->next = t;
-
-                    break;
-                }
-            }
-
-            prev = curr;
-            curr = curr->next;
-        }
-        
-        // We haven't find an id unused before so we add one at the end
-		if (curr == NULL) {
-			t->idSpace = prev->idSpace+1;
-			t->next = NULL;
-		
-			prev->next = t;
-		}
-    }
-	
-	// We set the thread's current ID
-	*threadIdSpace = t->idSpace;
+    // We set the thread's current ID
+    *threadIdSpace = id;
 
     nbThreads++;
 
     mutex->V();
 
-    int sizeAddr = numPages * PageSize;
-
-    if ((sizeAddr - 2*PageSize - ((int)t->idSpace)*PageSize*NbPageUserThread) < (sizeAddr - UserStackSize)) {
-        RemoveUserThread(t->idSpace);
-        return -2;
-    }
-
-    
-    return sizeAddr - 2*PageSize - t->idSpace*PageSize*NbPageUserThread;
+    return numPages*PageSize - 2*PageSize - id*PageSize*NbPageUserThread;
 }
 
 //----------------------------------------------------------------------
@@ -344,29 +304,17 @@ Semaphore*
 AddrSpace::RemoveUserThread (unsigned int threadIdSpace) {
     mutex->P();
 
-    struct ThreadId *prev = NULL, *curr = IDList;
-    while(curr != NULL) {
-        if (curr->idSpace == threadIdSpace) {
-            Semaphore *tmp = curr->sem;
-
-            if (prev == NULL) {
-                IDList = IDList->next;
-            } else {
-                prev->next = curr->next;
-            }
-            nbThreads--;
-            delete curr;
-
-            mutex->V();
-            return tmp;
-        }
-        prev = curr;
-        curr = curr->next;
+    Semaphore *sem = NULL;
+    if (threadList[threadIdSpace] != NULL) {
+        sem = threadList[threadIdSpace]->sem;
+        delete threadList[threadIdSpace];
+        nbThreads--;
+        threadList[threadIdSpace] = NULL;
     }
 
     mutex->V();
 
-    return NULL;
+    return sem;
 }
 
 //----------------------------------------------------------------------
@@ -391,19 +339,19 @@ AddrSpace::IsJoinableUserThread (unsigned int threadId, unsigned int joinId) {
     mutex->P();
 
     int find = -1;
-    struct ThreadId *curr = IDList;
-    while(curr != NULL) {
-        if (curr->id == joinId && curr->waited == threadId) {
-            mutex->V();
-            return -3;
-        } else if (curr->id == threadId) {
-            if (curr->waited > 0) {
+    for(int i = 0; i < MaxUserThreads; i++) {
+        if (threadList[i] != NULL) {
+            if (threadList[i]->id == joinId && threadList[i]->waited == (int)threadId) {
                 mutex->V();
-                return -2;
+                return -3;
+            } else if (threadList[i]->id == threadId) {
+                if (threadList[i]->waited >= 0) {
+                    mutex->V();
+                    return -2;
+                }
+                find = 0;
             }
-            find = 0;
         }
-        curr = curr->next;
     }
 
     mutex->V();
@@ -420,19 +368,24 @@ void
 AddrSpace::WaitForThread (unsigned int threadId, unsigned int joinId, Semaphore *semJoin) {
     mutex->P();
 
-    struct ThreadId *curr = IDList;
-    while(curr != NULL) {
-        if (curr->id == threadId) {
-            curr->waited = joinId;
-            curr->sem = semJoin;
+    for(int i = 0; i < MaxUserThreads; i++) {
+        if (threadList[i] != NULL) {
+            if (threadList[i]->id == threadId) {
+                threadList[i]->waited = joinId;
+                threadList[i]->sem = semJoin;
 
-            mutex->V();
-            semJoin->P();
+                mutex->V();
+                semJoin->P();
 
-            return;
+                return;
+            }
         }
-        curr = curr->next;
     }
 
     mutex->V();
+}
+
+int
+AddrSpace::Sbrk(unsigned int n) {
+    return 0;
 }
