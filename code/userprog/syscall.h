@@ -47,6 +47,7 @@
 #define SC_GetTid 26
 #define SC_GetPid 27
 #define SC_GetPPid 28
+ #define SC_Waitpid 29
 
 #ifdef IN_USER_MODE
 
@@ -187,6 +188,9 @@ int GetPid();
 
 /* Return the father's process id, -1 if no father */
 int GetPPid();
+
+/* Wait for the process number pid finish */
+int Waitpid();
 
 /*-------------------------------------------
 	Semaphore for user's utilisation

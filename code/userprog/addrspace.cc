@@ -149,11 +149,13 @@ AddrSpace::AddrSpace (OpenFile * executable)
 			      noffH.initData.size, noffH.initData.inFileAddr); */
       }
 
-      // Initialization needed to user threads
-      IDList = NULL;
-      nbThreads = 0;
-      mutex = new Semaphore("mutex", 1);
-      semWaitUserThreads = new Semaphore("Waiting for main thread", 1);
+        // Initialization needed to user threads
+        IDList = NULL;
+        nbThreads = 0;
+        mutex = new Semaphore("mutex", 1);
+        semWaitUserThreads = new Semaphore("Waiting for main thread", 1);
+        semWait = new Semaphore("Waiting for child process",0);
+        semWaitFromFather = NULL;
 }
 
 //----------------------------------------------------------------------
@@ -177,6 +179,8 @@ AddrSpace::~AddrSpace ()
 
     delete semWaitUserThreads;
     delete mutex;
+    delete semWait;
+    //delete semWaitFromFather;
 
     struct ThreadId *prev, *curr = IDList;
     while(curr != NULL) {
@@ -435,4 +439,14 @@ AddrSpace::WaitForThread (unsigned int threadId, unsigned int joinId, Semaphore 
     }
 
     mutex->V();
+}
+
+
+
+int do_Waitpid(){
+  DEBUG ('z', "Wait par process %s\n",currentThread->pid);
+
+  currentThread->space->semWait->P();
+
+  return 0;
 }

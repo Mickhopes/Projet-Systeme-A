@@ -26,6 +26,8 @@
 
 class Semaphore;
 
+extern int do_Waitpid();
+
 // Structure for keeping track of used IDs
 struct ThreadId {
   unsigned int id;
@@ -70,7 +72,10 @@ class AddrSpace
     /* Return an incremented id that is unused */
     int FindUserThreadId ();
 
+
     Semaphore *semWaitUserThreads;
+    Semaphore *semWait;  // Semaphore used for wait a child
+    Semaphore *semWaitFromFather;  // Semaphore used for wait a child
 
   private:
       TranslationEntry * pageTable;	// Assume linear page table translation
