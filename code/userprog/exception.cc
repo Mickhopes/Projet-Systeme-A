@@ -28,6 +28,7 @@
 #include "userfork.h"
 #include "synch.h"
 #include "errorno.h"
+#include "addrspace.h"
 
 unsigned int errorno;
 
@@ -254,10 +255,18 @@ ExceptionHandler(ExceptionType which)
 					nbProc--;
 					DEBUG ('y', "%s décrémente nbProc, il reste %d processus\n",currentThread->getName(), nbProc);
 					semNumProc->V();
+					if (currentThread->space->semWaitFromFather != NULL){
+						currentThread->space->semWaitFromFather->V();
+					}
 					delete currentThread->space;
 					DEBUG ('y', "Avant finish sur le thread %s\n",currentThread->getName());
 					currentThread->Finish();
 				}
+				break;
+			}
+			case SC_Waitpid: {
+				DEBUG ('z', "do_Waitpid\n");
+				machine->WriteRegister(2, do_Waitpid());
 				break;
 			}
 			default: {

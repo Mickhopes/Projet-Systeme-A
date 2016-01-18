@@ -41,6 +41,7 @@ do_ForkExec (char *filename)
     {
 	  printf ("Unable to open file %s\n", filename);
 	  errorno = EINEX;
+      currentThread->space->semWait->V();
 	  return -1;
     }
     space = new AddrSpace (executable);
@@ -54,6 +55,7 @@ do_ForkExec (char *filename)
     Thread *newThread = new Thread("processus", -1, pid, currentThread->pid);
     
     newThread->space = space;
+    newThread->space->semWaitFromFather = currentThread->space->semWait;
 
     delete executable;		// close file
 

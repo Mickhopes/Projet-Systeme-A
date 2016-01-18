@@ -165,6 +165,8 @@ AddrSpace::AddrSpace (OpenFile * executable)
       nbThreads = 0;
       mutex = new Semaphore("mutex", 1);
       semWaitUserThreads = new Semaphore("Waiting for main thread", 1);
+      semWait = new Semaphore("Waiting for child process",0);
+      semWaitFromFather = NULL;
 }
 
 //----------------------------------------------------------------------
@@ -190,6 +192,7 @@ AddrSpace::~AddrSpace ()
     delete mutex;
     delete bitmap;
     delete [] threadList;
+    delete semWait;
 }
 
 //----------------------------------------------------------------------
@@ -388,4 +391,12 @@ AddrSpace::WaitForThread (unsigned int threadId, unsigned int joinId, Semaphore 
 int
 AddrSpace::Sbrk(unsigned int n) {
     return 0;
+}
+
+int do_Waitpid(){
+  DEBUG ('z', "Wait par process %s\n",currentThread->pid);
+
+  currentThread->space->semWait->P();
+
+  return 0;
 }
