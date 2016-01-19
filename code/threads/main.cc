@@ -38,6 +38,7 @@
 //    -n sets the network reliability
 //    -m sets this machine's host id (needed for the network)
 //    -o runs a simple test of the Nachos network software
+//	  -rg runs a ring test with multiple machines
 //
 //  NOTE -- flags are ignored until the relevant assignment.
 //  Some of the flags are interpreted here; some in system.cc.
@@ -60,6 +61,7 @@ extern void ThreadTest (void), Copy (const char *unixFile, const char *nachosFil
 extern void Print (char *file), PerformanceTest (void);
 extern void StartProcess (char *file), ConsoleTest (char *in, char *out), SynchConsoleTest (char *in, char *out);
 extern void MailTest (int networkID);
+extern void RingTest (int numMachines);
 
 //----------------------------------------------------------------------
 // main
@@ -85,7 +87,7 @@ main (int argc, char **argv)
     (void) Initialize (argc, argv);
 
 #ifdef THREADS
-    ThreadTest ();
+    //ThreadTest ();
 #endif
 
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount)
@@ -161,6 +163,15 @@ main (int argc, char **argv)
 		// to give the user time to 
 		// start up another nachos
 		MailTest (atoi (*(argv + 1)));
+		argCount = 2;
+	    }
+	  else if (!strcmp (*argv, "-rg"))
+	    {
+		ASSERT (argc > 1);
+		Delay (2);	// delay for 2 seconds
+		// to give the user time to 
+		// start up another nachos
+		RingTest (atoi (*(argv + 1)));
 		argCount = 2;
 	    }
 #endif // NETWORK
