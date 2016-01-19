@@ -127,7 +127,7 @@ Directory::Find(const char *name)
 //----------------------------------------------------------------------
 
 bool
-Directory::Add(const char *name, int newSector)
+Directory::Add(const char *name, int newSector, int isDirectory)
 { 
     if (FindIndex(name) != -1)
 	return FALSE;
