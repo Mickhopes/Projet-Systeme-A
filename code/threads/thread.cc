@@ -307,6 +307,31 @@ Thread::Sleep ()
 }
 
 //----------------------------------------------------------------------
+// Thread::Sleep
+//      Put the thread to sleep and wake him up after n milliseconds
+//----------------------------------------------------------------------
+void 
+SleepHandler(int arg)
+{
+  IntStatus old = interrupt->SetLevel(IntOff);
+
+  scheduler->ReadyToRun((Thread*)arg);
+
+  interrupt->SetLevel(old);
+}
+
+void
+Thread::Sleep (long long n)
+{
+    IntStatus old = interrupt->SetLevel(IntOff);
+
+    interrupt->Schedule(SleepHandler, (int)this, n, TimerInt);
+    this->Sleep();
+
+    interrupt->SetLevel(old);
+}
+
+//----------------------------------------------------------------------
 // ThreadFinish, InterruptEnable, ThreadPrint
 //      Dummy functions because C++ does not allow a pointer to a member
 //      function.  So in order to do this, we create a dummy C function
