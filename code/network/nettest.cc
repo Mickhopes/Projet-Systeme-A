@@ -36,10 +36,9 @@ MailTest(int farAddr)
     PacketHeader outPktHdr, inPktHdr;
     MailHeader outMailHdr, inMailHdr;
     const char *data = "Hello there!";
-    const char *ack = "Got it!";
     char buffer[MaxMailSize];
 
-    int i = 0;
+    /*int i = 0;
     while(i < 10) {
         // construct packet, mail header for original message
         // To: destination machine, mailbox 0
@@ -57,7 +56,23 @@ MailTest(int farAddr)
         printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
         fflush(stdout);
         i++;
-    }
+    }*/
+
+        // construct packet, mail header for original message
+        // To: destination machine, mailbox 0
+        // From: our machine, reply to: mailbox 1
+        outPktHdr.to = farAddr;     
+        outMailHdr.to = 0;
+        outMailHdr.from = 1;
+        outMailHdr.length = strlen(data) + 1;
+        
+        // Send the first message
+        postOffice->SendReliable(outPktHdr, outMailHdr, data); 
+
+        // Wait for the first message from the other machine
+        postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
+        printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
+        fflush(stdout);
 
     // Then we're done!
     interrupt->Halt();
@@ -69,7 +84,6 @@ RingTest(int numMachines)
     PacketHeader outPktHdr, inPktHdr;
     MailHeader outMailHdr, inMailHdr;
     const char *data = "Token!";
-    const char *ack = "Ack!";
     char buffer[MaxMailSize];
 
     if (postOffice->GetNetworkAddress() == 0) {
@@ -90,7 +104,7 @@ RingTest(int numMachines)
         // Wait for previous machine to send the token
         postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
         printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
-        fflush(stdout); 
+        fflush(stdout);
 
         // We keep the token 2 seconds
         Delay(2);
@@ -102,7 +116,7 @@ RingTest(int numMachines)
         outMailHdr.length = strlen(buffer) + 1;
 
         // We send it
-        postOffice->Send(outPktHdr, outMailHdr, buffer);
+        postOffice->SendReliable(outPktHdr, outMailHdr, buffer);
     }
 
     // Then we're done!

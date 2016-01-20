@@ -318,17 +318,18 @@ SleepHandler(int arg)
   scheduler->ReadyToRun((Thread*)arg);
 
   interrupt->SetLevel(old);
+
 }
 
 void
 Thread::Sleep (long long n)
 {
-    IntStatus old = interrupt->SetLevel(IntOff);
+  IntStatus old = interrupt->SetLevel(IntOff);
 
-    interrupt->Schedule(SleepHandler, (int)this, n, TimerInt);
-    this->Sleep();
+  interrupt->Schedule(SleepHandler, (int)this, n, TimerInt);
+  this->Sleep();
 
-    interrupt->SetLevel(old);
+  interrupt->SetLevel(old);
 }
 
 //----------------------------------------------------------------------

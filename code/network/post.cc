@@ -251,7 +251,8 @@ PostOffice::PostalDelivery()
 
     for (;;) {
         // first, wait for a message
-        messageAvailable->P();	
+        messageAvailable->P();
+        DEBUG('r', "coucou\n");
         pktHdr = network->Receive(buffer);
 
         mailHdr = *(MailHeader *)buffer;
@@ -264,15 +265,17 @@ PostOffice::PostalDelivery()
     	ASSERT(0 <= mailHdr.to && mailHdr.to < numBoxes);
     	ASSERT(mailHdr.length <= MaxMailSize);
 
+        DEBUG('r', "%d est un ack ? %d\n", netAddr, mailHdr.isAck);
         if (mailHdr.isAck) {
             ackLock->Acquire();
-            ackTable[mailHdr.to][mailHdr.ack] = 2;
+            DEBUG('r', "%d a recu un ack de %d\n", netAddr, mailHdr.ack);
+            ackTable[mailHdr.to][mailHdr.ack % NbAckTable] = 2;
             ackLock->Release();
         } else {
             // put into mailbox
             boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeader));
 
-            // TODO: renvoyer un ack
+            DEBUG('r', "%d envoie un ack de %d à %d sur la boite %d\n", netAddr, mailHdr.ack, pktHdr.from, mailHdr.from);
             SendAck(pktHdr, mailHdr);
         }
     }
@@ -339,18 +342,22 @@ PostOffice::SendReliable(PacketHeader pktHdr, MailHeader mailHdr, const char* da
     // We set the ack index that we will wait in the ackTable
     mailHdr.isAck = 0;
     FindAck(&mailHdr);
+    DEBUG('r', "%d a son ack réglé à %d\n", netAddr, mailHdr.ack);
 
     // We resend until we receive the ack
     for(int i = 0; i < MAXREEMISSIONS; i++) {
         // We send the packet
+        DEBUG('r', "%d envoie un paquet à %d tentative %d\n", netAddr, pktHdr.to, i+1);
         Send(pktHdr, mailHdr, data);
 
         // We wait a certain amount of time, see TEMPO
-        currentThread->Sleep(TEMPO);
+        //currentThread->Sleep(TEMPO);
+        Delay(2);
 
         // Then we check if the ack has arrived
         ackLock->Acquire();
         if (ackTable[mailHdr.from][mailHdr.ack] == 2) {
+            DEBUG('r', "%d a eu sa réponse\n", netAddr);
             ackLock->Release();
             break;
         }
@@ -379,9 +386,15 @@ PostOffice::SendAck(PacketHeader pktHdr, MailHeader mailHdr)
     outPktHdr.to = pktHdr.from;
     outMailHdr.to = mailHdr.from;
     outMailHdr.from = 0; // This instruction is useless since we don't respond to an ack
-    outMailHdr.length = 4;
+    outMailHdr.length = strlen(data) + 1;
+    outMailHdr.isAck = 1;
+    outMailHdr.ack = mailHdr.ack;
+
+    DEBUG('r', "%d tente d'envoyer un ack a %d sur la boite %d avec un ack de %d\n", netAddr, outPktHdr.to, outMailHdr.to, outMailHdr.ack);
 
     Send(outPktHdr, outMailHdr, data);
+
+    DEBUG('r', "%d c'est send abruti\n", netAddr);
 }
 
 //----------------------------------------------------------------------

@@ -33,7 +33,7 @@
 
 #define NbAckTable 1000
 
-#define TEMPO 5000 // Set in milliseconds
+#define TEMPO 10000 // Set in milliseconds
 #define MAXREEMISSIONS 15
 
 // Mailbox address -- uniquely identifies a mailbox on a given machine.
