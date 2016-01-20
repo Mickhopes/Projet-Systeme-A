@@ -72,7 +72,8 @@ class Directory {
 	* sec is a pointer on header of the current directory 
 	* fatherSec is a pointer on header of the father directory 
 	*/
-    Directory(int size, char *nameDir, int sec, int fatherSec);
+    Directory(int size, int sec, int fatherSec);
+    Directory(int size);
     
     ~Directory();			// De-allocate the directory
 
@@ -83,7 +84,9 @@ class Directory {
     int Find(const char *name);		// Find the sector number of the 
 					// FileHeader for file: "name"
 
-    bool Add(const char *name, int newSector, int isDirectory);  // Add a file name into the directory
+    bool AddFile(const char *name, int newSector);  // Add a file name into the directory
+    
+    bool AddDirectory(int newSector);
 
 
 	/*
@@ -100,7 +103,7 @@ class Directory {
 	 * FALSE else
 	 * when return FALSE errorno is updated
 	*/
-    bool RemoveDirectory(const char *nameDir);
+    bool RemoveDirectory(int sector);
     
     
     /*
@@ -123,11 +126,6 @@ class Directory {
     int tableSize;			// Number of directory entries
     DirectoryEntry *table;		// Table of pairs: 
 					// <file name, file header location> 
-					
-	int sector;		//pointer of the header of current directory
-	
-	int fatherSector; //pointer on the header of father directory
-						//if fatherSector ==  sector currentDirectory is "/"
 
     int FindIndex(const char *name);	// Find the index into the directory 
 					//  table corresponding to "name"

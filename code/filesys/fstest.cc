@@ -50,23 +50,29 @@ Copy(const char *from, const char *to)
 // Create a Nachos file of the same length
     DEBUG('f', "Copying file %s, size %d, to file %s\n", from, fileLength, to);
     if (!fileSystem->Create(to, fileLength)) {	 // Create Nachos file
-	printf("Copy: couldn't create output file %s\n", to);
-	fclose(fp);
-	return;
+		DEBUG('f', "dsfxgfghhjlkmmjhkhgqhdfkhqfdhsGFDHGFSHdfHQDFHKFdkfdkfkDFK\n");
+		printf("Copy: couldn't create output file %s\n", to);
+		fclose(fp);
+		return;
     }
+    
     
     openFile = fileSystem->Open(to);
     ASSERT(openFile != NULL);
-    
+     
+   
 // Copy the data in TransferSize chunks
     buffer = new char[TransferSize];
+    DEBUG('w', "dsfxgfghhjlkmmjhkhgqhdfkhqfdhsGFDHGFSHdfHQDFHKFdkfdkfkDFK\n");
     while ((amountRead = fread(buffer, sizeof(char), TransferSize, fp)) > 0)
-	openFile->Write(buffer, amountRead);	
+		openFile->Write(buffer, amountRead);
+	DEBUG('w', "dsfxgfghhjlkmmjhkhgqhdfkhqfdhsGFDHGFSHdfHQDFHKFdkfdkfkDFK\n");
     delete [] buffer;
 
 // Close the UNIX and the Nachos files
     delete openFile;
     fclose(fp);
+    
 }
 
 //----------------------------------------------------------------------

@@ -30,9 +30,8 @@
 // 	cf header file
 //----------------------------------------------------------------------
 
-Directory::Directory(int size, char *nameDir, int sec, int fatherSec)
+Directory::Directory(int size, int sec, int fatherSec)
 {
-	strcpy(nameDirectory, nameDir);
     table = new DirectoryEntry[size];
     tableSize = size;
     
@@ -42,13 +41,35 @@ Directory::Directory(int size, char *nameDir, int sec, int fatherSec)
 	table[currentDirectory].isDirectory = 1;
 	table[currentDirectory].inUse = TRUE;
 	table[currentDirectory].sector = sec;
-	strcpy(table[currentDirectory].name, nameCurrentDirectory);
 	
 	// for the fatherDirectory ".."
 	table[fatherDirectory].isDirectory = 1;
 	table[fatherDirectory].inUse = TRUE;
 	table[fatherDirectory].sector = fatherSec;
-	strcpy(table[fatherDirectory].name, nameFatherDirectory);
+	int i;
+	for (i = specialEntry; i < tableSize; i++)
+	{
+		table[i].inUse = FALSE;
+		
+	}
+}
+
+Directory::Directory(int size)
+{
+   table = new DirectoryEntry[size];
+    tableSize = size;
+    
+    //Setup of the hierarchy
+    
+    // for the currentDirectory "."
+	table[currentDirectory].isDirectory = 1;
+	table[currentDirectory].inUse = TRUE;
+	table[currentDirectory].sector = 1;
+	
+	// for the fatherDirectory ".."
+	table[fatherDirectory].isDirectory = 1;
+	table[fatherDirectory].inUse = TRUE;
+	table[fatherDirectory].sector = 1;
 	int i;
 	for (i = specialEntry; i < tableSize; i++)
 	{
@@ -181,7 +202,7 @@ Directory::RemoveFile(const char *nameFi)
 
 
 
-bool Directory::RemoveDirectory(const char *nameDir)
+bool Directory::RemoveDirectory(int sectorDir)
 {
 	int i = FindIndex(nameDir);
 	if (i == -1)
