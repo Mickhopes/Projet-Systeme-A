@@ -142,6 +142,22 @@ FileSystem::FileSystem(bool format)
     }
 }
 
+
+bool CreateDirectory(const char *name)
+{
+		if(strlen(name) > FileNameMaxLen)
+		{
+			errorno = ENAMETOOLONG;
+			return false;
+		}
+	
+}
+
+
+
+
+
+
 //----------------------------------------------------------------------
 // FileSystem::Create
 // 	Create a file in the Nachos file system (similar to UNIX create).

@@ -27,20 +27,34 @@
 
 //----------------------------------------------------------------------
 // Directory::Directory
-// 	Initialize a directory; initially, the directory is completely
-//	empty.  If the disk is being formatted, an empty directory
-//	is all we need, but otherwise, we need to call FetchFrom in order
-//	to initialize it from disk.
-//
-//	"size" is the number of entries in the directory
+// 	cf header file
 //----------------------------------------------------------------------
 
-Directory::Directory(int size)
+Directory::Directory(int size, char *nameDirectory, int sec, int fatherSec)
 {
+	strcpy(name, nameDirectory);
     table = new DirectoryEntry[size];
     tableSize = size;
-    for (int i = 0; i < tableSize; i++)
-	table[i].inUse = FALSE;
+    
+    //Setup of the hierarchy
+    
+    // for the currentDirectory "."
+	table[currentDirectory].isDirectory = 1;
+	table[currentDirectory].isUse = TRUE;
+	table[currentDirectory].sector = sec;
+	strcpy(table[currentDirectory].name, nameCurrentDirectory);
+	
+	// for the fatherDirectory ".."
+	table[fatherDirectory].isDirectory = 1;
+	table[fatherDirectory].isUse = TRUE;
+	table[fatherDirectory].sector = fatherSec;
+	strcpy(table[fatherDirectory].name, nameFatherDirectory);
+	int i;
+	for (i = specialEntry; i < tableSize; i++)
+	{
+		isUse = FALSE;
+		
+	}
 }
 
 //----------------------------------------------------------------------
@@ -50,6 +64,7 @@ Directory::Directory(int size)
 
 Directory::~Directory()
 { 
+    //Check if directory is empty before deletion
     delete [] table;
 } 
 
@@ -83,7 +98,7 @@ Directory::WriteBack(OpenFile *file)
 // Directory::FindIndex
 // 	Look up file name in directory, and return its location in the table of
 //	directory entries.  Return -1 if the name isn't in the directory.
-//
+//	Works for subdirectories as well as files.
 //	"name" -- the file name to look up
 //----------------------------------------------------------------------
 
@@ -117,13 +132,14 @@ Directory::Find(const char *name)
 
 //----------------------------------------------------------------------
 // Directory::Add
-// 	Add a file into the directory.  Return TRUE if successful;
+// 	Add a file or a sub-directory into the directory.  Return TRUE if successful;
 //	return FALSE if the file name is already in the directory, or if
 //	the directory is completely full, and has no more space for
 //	additional file names.
 //
 //	"name" -- the name of the file being added
 //	"newSector" -- the disk sector containing the added file's header
+//	"isDirectory" -- indicates if the new addition is a sub-directory	
 //----------------------------------------------------------------------
 
 bool
@@ -137,6 +153,7 @@ Directory::Add(const char *name, int newSector, int isDirectory)
             table[i].inUse = TRUE;
             strncpy(table[i].name, name, FileNameMaxLen); 
             table[i].sector = newSector;
+            table[i].isDirectory = isDirectory;
         return TRUE;
 	}
     return FALSE;	// no space.  Fix when we have extensible files.
@@ -163,7 +180,7 @@ Directory::Remove(const char *name)
 
 //----------------------------------------------------------------------
 // Directory::List
-// 	List all the file names in the directory. 
+// 	List all the entry names in the directory. 
 //----------------------------------------------------------------------
 
 void
@@ -188,10 +205,17 @@ Directory::Print()
     printf("Directory contents:\n");
     for (int i = 0; i < tableSize; i++)
 	if (table[i].inUse) {
-	    printf("Name: %s, Sector: %d\n", table[i].name, table[i].sector);
-	    hdr->FetchFrom(table[i].sector);
-	    hdr->Print();
+		if(table[i].isDirectory == 1){
+			printf("Directory : %s, Sector : %d\n", table[i].name, table[i].sector);
+			//TODO : call Print in the subdirectory to list all its own contents (with an indent ?)
+		}
+		else{
+			printf("Name: %s, Sector: %d\n", table[i].name, table[i].sector);
+			hdr->FetchFrom(table[i].sector);
+			hdr->Print();
+		}
 	}
     printf("\n");
     delete hdr;
 }
+

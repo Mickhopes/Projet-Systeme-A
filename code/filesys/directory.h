@@ -21,6 +21,14 @@
 
 #define FileNameMaxLen 		9	// for simplicity, we assume 
 					// file names are <= 9 characters long
+					
+#define specialEntry 2
+
+#define currentDirectory 0
+#define fatherDirectory 1
+
+#define nameCurrentDirectory "."
+#define nameFatherDirectory ".."
 
 // The following class defines a "directory entry", representing a file
 // in the directory.  Each entry gives the name of the file, and where
@@ -39,6 +47,10 @@ class DirectoryEntry {
 					// the trailing '\0'
 };
 
+
+
+	
+
 // The following class defines a UNIX-like "directory".  Each entry in
 // the directory describes a file, and where to find it on disk.
 //
@@ -51,8 +63,15 @@ class DirectoryEntry {
 
 class Directory {
   public:
-    Directory(int size); 		// Initialize an empty directory
-					// with space for "size" files
+	/*
+	* Initialize an empty directory
+	* size is the number of entries in directory(2 reserved for "." and "..")
+	* nameDirectory is the name of the directory
+	* sec is a pointer on header of the current directory 
+	* fatherSec is a pointer on header of the father directory 
+	*/
+    Directory(int size, char *nameDirectory, int sec, int fatherSec);
+    
     ~Directory();			// De-allocate the directory
 
     void FetchFrom(OpenFile *file);  	// Init directory contents from disk
@@ -71,11 +90,19 @@ class Directory {
     void Print();			// Verbose print of the contents
 					//  of the directory -- all the file
 					//  names and their contents.
+	
 
   private:
+  
+	char *name;
     int tableSize;			// Number of directory entries
     DirectoryEntry *table;		// Table of pairs: 
 					// <file name, file header location> 
+					
+	int sector;		//pointer of the header of current directory
+	
+	int fatherSector; //pointer on the header of father directory
+						//if fatherSector ==  sector currentDirectory is "/"
 
     int FindIndex(const char *name);	// Find the index into the directory 
 					//  table corresponding to "name"

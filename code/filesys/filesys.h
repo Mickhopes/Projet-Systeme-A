@@ -52,6 +52,8 @@ class FileSystem {
 	Close(fileDescriptor); 
 	return TRUE; 
 	}
+	
+	bool CreateDirectory(const char *name);
 
     OpenFile* Open(char *name) {
 	  int fileDescriptor = OpenForReadWrite(name, FALSE);
@@ -73,7 +75,9 @@ class FileSystem {
     					// If "format", there is nothing on
 					// the disk, so initialize the directory
     					// and the bitmap of free blocks.
-
+	
+	bool CreateDirectory(const char *name);
+	
     bool Create(const char *name, int initialSize);  	
 					// Create a file (UNIX creat)
 
