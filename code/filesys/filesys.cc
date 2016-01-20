@@ -83,7 +83,7 @@ FileSystem::FileSystem(bool format)
     if (format) 
     {
         BitMap *freeMap = new BitMap(NumSectors);
-        Directory *directory = new Directory(NumDirEntries, (char*)"tmp", 0, 0);
+        Directory *directory = new Directory(NumDirEntries, (char*)"tmp", DirectorySector, DirectorySector);
 		FileHeader *mapHdr = new FileHeader;
 		FileHeader *dirHdr = new FileHeader;
 
@@ -195,14 +195,14 @@ FileSystem::Create(const char *name, int initialSize)
     Directory *directory;
     BitMap *freeMap;
     FileHeader *hdr;
-    int sector = 10;
+    int sector;
     bool success;
 
     DEBUG('f', "Creating file %s, size %d\n", name, initialSize);
     
     
 	//TODO change param
-    directory = new Directory(NumDirEntries, (char*)name, sector, sector);
+    directory = new Directory(NumDirEntries, (char*)name, DirectorySector, DirectorySector);
     directory->FetchFrom(directoryFile);
 
     if (directory->Find(name) != -1)
@@ -248,7 +248,7 @@ OpenFile *
 FileSystem::Open(const char *name)
 { 
 	//TODO change param
-    Directory *directory = new Directory(NumDirEntries, (char*)name, 0, 0);
+    Directory *directory = new Directory(NumDirEntries, (char*)"tmp", DirectorySector, DirectorySector);
     OpenFile *openFile = NULL;
     int sector;
 
@@ -285,7 +285,7 @@ FileSystem::Remove(const char *name)
     
     
     //TODO change param
-    directory = new Directory(NumDirEntries,(char*)name, 0, 0);
+    directory = new Directory(NumDirEntries,(char*)"tmp", DirectorySector, DirectorySector);
     directory->FetchFrom(directoryFile);
     sector = directory->Find(name);
     if (sector == -1) {
@@ -319,7 +319,7 @@ void
 FileSystem::List()
 {
 	//change param
-    Directory *directory = new Directory(NumDirEntries, (char*)"tmp",0, 0);
+    Directory *directory = new Directory(NumDirEntries, (char*)"tmp",DirectorySector, DirectorySector);
 
     directory->FetchFrom(directoryFile);
     directory->List();
@@ -344,7 +344,7 @@ FileSystem::Print()
     BitMap *freeMap = new BitMap(NumSectors);
     
     //change param
-    Directory *directory = new Directory(NumDirEntries, (char*)"tmp", 0, 0);
+    Directory *directory = new Directory(NumDirEntries, (char*)"tmp", DirectorySector, DirectorySector);
 
     printf("Bit map file header:\n");
     bitHdr->FetchFrom(FreeMapSector);
