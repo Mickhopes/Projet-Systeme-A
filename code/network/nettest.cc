@@ -50,22 +50,10 @@ MailTest(int farAddr)
         outMailHdr.length = strlen(data) + 1;
         
         // Send the first message
-        postOffice->Send(outPktHdr, outMailHdr, data); 
+        postOffice->SendReliable(outPktHdr, outMailHdr, data); 
 
         // Wait for the first message from the other machine
         postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
-        printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
-        fflush(stdout);
-
-        // Send acknowledgement to the other machine (using "reply to" mailbox
-        // in the message that just arrived
-        outPktHdr.to = inPktHdr.from;
-        outMailHdr.to = inMailHdr.from;
-        outMailHdr.length = strlen(ack) + 1;
-        postOffice->Send(outPktHdr, outMailHdr, ack); 
-
-        // Wait for the ack from the other machine to the first message we sent.
-        postOffice->Receive(1, &inPktHdr, &inMailHdr, buffer);
         printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
         fflush(stdout);
         i++;
@@ -92,36 +80,17 @@ RingTest(int numMachines)
         outMailHdr.length = strlen(data) + 1;
 
         // We send it
-        postOffice->Send(outPktHdr, outMailHdr, data);
-
-        // Wait for the ack from the other machine
-        postOffice->Receive(1, &inPktHdr, &inMailHdr, buffer);
-        printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
-        fflush(stdout);
+        postOffice->SendReliable(outPktHdr, outMailHdr, data);
 
         // Wait for last machine to send the token
         postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
         printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
         fflush(stdout);
-
-        // Send acknowledgement to the other machine (using "reply to" mailbox
-        // in the message that just arrived
-        outPktHdr.to = inPktHdr.from;
-        outMailHdr.to = inMailHdr.from;
-        outMailHdr.length = strlen(ack) + 1;
-        postOffice->Send(outPktHdr, outMailHdr, ack); 
     } else {
         // Wait for previous machine to send the token
         postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
         printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
-        fflush(stdout);
-
-        // Send acknowledgement to the other machine (using "reply to" mailbox
-        // in the message that just arrived
-        outPktHdr.to = inPktHdr.from;
-        outMailHdr.to = inMailHdr.from;
-        outMailHdr.length = strlen(ack) + 1;
-        postOffice->Send(outPktHdr, outMailHdr, ack); 
+        fflush(stdout); 
 
         // We keep the token 2 seconds
         Delay(2);
@@ -134,11 +103,6 @@ RingTest(int numMachines)
 
         // We send it
         postOffice->Send(outPktHdr, outMailHdr, buffer);
-
-        // Wait for the ack from the other machine
-        postOffice->Receive(1, &inPktHdr, &inMailHdr, buffer);
-        printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
-        fflush(stdout);
     }
 
     // Then we're done!

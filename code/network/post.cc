@@ -18,6 +18,7 @@
 
 #include "copyright.h"
 #include "post.h"
+#include "system.h"
 
 #include <strings.h> /* for bzero */
 
@@ -179,11 +180,26 @@ PostOffice::PostOffice(NetworkAddress addr, double reliability, int nBoxes)
     messageAvailable = new Semaphore("message available", 0);
     messageSent = new Semaphore("message sent", 0);
     sendLock = new Lock("message send lock");
+    ackLock = new Lock("ack table lock");
 
 // Second, initialize the mailboxes
     netAddr = addr; 
     numBoxes = nBoxes;
     boxes = new MailBox[nBoxes];
+    ackTable = new unsigned int*[nBoxes];
+    ackNumber = new unsigned int[nBoxes];
+    ackSem = new Semaphore*[nBoxes];
+
+    for(int i = 0; i < nBoxes; i++) {
+        ackTable[i] = new unsigned int[NbAckTable];
+
+        for(int j = 0; j < NbAckTable; j++) {
+            ackTable[i][j] = 0;
+        }
+
+        ackNumber[i] = 0;
+        ackSem[i] = new Semaphore("Semaphore of boxes", NbAckTable);
+    }
 
 // Third, initialize the network; tell it which interrupt handlers to call
     network = new Network(addr, reliability, ReadAvail, WriteDone, (int) this);
@@ -204,9 +220,17 @@ PostOffice::PostOffice(NetworkAddress addr, double reliability, int nBoxes)
 PostOffice::~PostOffice()
 {
     delete network;
+    delete [] ackNumber;
+    for(int i = 0; i < numBoxes; i++) {
+        delete [] ackTable[i];
+        delete ackSem[i];
+    }
+    delete [] ackTable;
+    delete [] ackSem;
     delete [] boxes;
     delete messageAvailable;
     delete messageSent;
+    delete ackLock;
     delete sendLock;
 }
 
@@ -232,16 +256,25 @@ PostOffice::PostalDelivery()
 
         mailHdr = *(MailHeader *)buffer;
         if (DebugIsEnabled('n')) {
-	    printf("Putting mail into mailbox: ");
-	    PrintHeader(pktHdr, mailHdr);
+	       printf("Putting mail into mailbox: ");
+	       PrintHeader(pktHdr, mailHdr);
         }
 
-	// check that arriving message is legal!
-	ASSERT(0 <= mailHdr.to && mailHdr.to < numBoxes);
-	ASSERT(mailHdr.length <= MaxMailSize);
+    	// check that arriving message is legal!
+    	ASSERT(0 <= mailHdr.to && mailHdr.to < numBoxes);
+    	ASSERT(mailHdr.length <= MaxMailSize);
 
-	// put into mailbox
-        boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeader));
+        if (mailHdr.isAck) {
+            ackLock->Acquire();
+            ackTable[mailHdr.to][mailHdr.ack] = 2;
+            ackLock->Release();
+        } else {
+            // put into mailbox
+            boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeader));
+
+            // TODO: renvoyer un ack
+            SendAck(pktHdr, mailHdr);
+        }
     }
 }
 
@@ -291,7 +324,68 @@ PostOffice::Send(PacketHeader pktHdr, MailHeader mailHdr, const char* data)
 }
 
 //----------------------------------------------------------------------
-// PostOffice::Send
+// PostOffice::SendReliable
+//  Send the packet using Send() and then wait for an ack answer.
+//  If the ack has not been received, it re-send the packet.
+//  The packet is reemitted a predefined number of times.
+//----------------------------------------------------------------------
+
+void
+PostOffice::SendReliable(PacketHeader pktHdr, MailHeader mailHdr, const char* data)
+{
+    // We wait for a place in our reception box
+    ackSem[mailHdr.from]->P();
+
+    // We set the ack index that we will wait in the ackTable
+    mailHdr.isAck = 0;
+    FindAck(&mailHdr);
+
+    // We resend until we receive the ack
+    for(int i = 0; i < MAXREEMISSIONS; i++) {
+        // We send the packet
+        Send(pktHdr, mailHdr, data);
+
+        // We wait a certain amount of time, see TEMPO
+        currentThread->Sleep(TEMPO);
+
+        // Then we check if the ack has arrived
+        ackLock->Acquire();
+        if (ackTable[mailHdr.from][mailHdr.ack] == 2) {
+            ackLock->Release();
+            break;
+        }
+        ackLock->Release();
+    }
+
+    // Then we reset our entry in the ackTable
+    ackLock->Acquire();
+    ackTable[mailHdr.from][mailHdr.ack] = 0;
+    ackSem[mailHdr.from]->V();
+    ackLock->Release();
+}
+
+//----------------------------------------------------------------------
+// PostOffice::SendAck
+//  Send an ack to the machine which sent us a packet
+//----------------------------------------------------------------------
+
+void
+PostOffice::SendAck(PacketHeader pktHdr, MailHeader mailHdr)
+{
+    PacketHeader outPktHdr;
+    MailHeader outMailHdr;
+    const char *data = "ack";
+
+    outPktHdr.to = pktHdr.from;
+    outMailHdr.to = mailHdr.from;
+    outMailHdr.from = 0; // This instruction is useless since we don't respond to an ack
+    outMailHdr.length = 4;
+
+    Send(outPktHdr, outMailHdr, data);
+}
+
+//----------------------------------------------------------------------
+// PostOffice::Receive
 // 	Retrieve a message from a specific box if one is available, 
 //	otherwise wait for a message to arrive in the box.
 //
@@ -306,8 +400,7 @@ PostOffice::Send(PacketHeader pktHdr, MailHeader mailHdr, const char* data)
 //----------------------------------------------------------------------
 
 void
-PostOffice::Receive(int box, PacketHeader *pktHdr, 
-				MailHeader *mailHdr, char* data)
+PostOffice::Receive(int box, PacketHeader *pktHdr, MailHeader *mailHdr, char* data)
 {
     ASSERT((box >= 0) && (box < numBoxes));
 
@@ -353,4 +446,22 @@ NetworkAddress
 PostOffice::GetNetworkAddress()
 { 
     return netAddr;
+}
+
+//----------------------------------------------------------------------
+// PostOffice::FindAck
+//  Interrupt handler, called when a packet arrives from the network.
+//
+//  Signal the PostalDelivery routine that it is time to get to work!
+//----------------------------------------------------------------------
+
+void
+PostOffice::FindAck(MailHeader* mailHdr)
+{
+    ackLock->Acquire();
+    while(ackTable[mailHdr->from][ackNumber[mailHdr->from] % NbAckTable] != 0) {
+        ackNumber[mailHdr->from]++;
+    }
+    mailHdr->ack = ackNumber[mailHdr->from] % NbAckTable;
+    ackLock->Release();
 }
