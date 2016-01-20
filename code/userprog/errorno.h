@@ -12,7 +12,12 @@
 /*-----------------------------------------------------------------
 				Error on the filesys
 -----------------------------------------------------------------*/
-#define ENAMETOOLONG 7	//the name of the file is too long
+#define ENAMETOOLONG 7	//the name of the file or directory is too long
+#define EFILENOTEXIST 8	//file does not exist in current directory
+#define EWTYPE 9		//the type of target is wrong(directory/File...)
+#define EDIRNOTEXIST 10	//directory does not exist in current directory
+#define EDIRNOTEMPTY 11	//directory isn't empty
+
 
 // Global Variables
 extern unsigned int errorno;

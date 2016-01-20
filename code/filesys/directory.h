@@ -18,9 +18,11 @@
 #define DIRECTORY_H
 
 #include "openfile.h"
+#include "errorno.h"
 
 #define FileNameMaxLen 		9	// for simplicity, we assume 
 					// file names are <= 9 characters long
+#define directoryNameMaxLen 9
 					
 #define specialEntry 2
 
@@ -70,7 +72,7 @@ class Directory {
 	* sec is a pointer on header of the current directory 
 	* fatherSec is a pointer on header of the father directory 
 	*/
-    Directory(int size, char *nameDirectory, int sec, int fatherSec);
+    Directory(int size, char *nameDir, int sec, int fatherSec);
     
     ~Directory();			// De-allocate the directory
 
@@ -83,7 +85,30 @@ class Directory {
 
     bool Add(const char *name, int newSector, int isDirectory);  // Add a file name into the directory
 
-    bool Remove(const char *name);	// Remove a file from the directory
+
+	/*
+	 * remove file with name = nameFile
+	 * return TRUE if success
+	 * FALSE else
+	 * when return FALSE errorno is updated
+	*/
+    bool RemoveFile(const char *nameFi);	// Remove a file from the directory
+    
+    /*
+	 * remove directory with name = nameDir
+	 * return TRUE if success
+	 * FALSE else
+	 * when return FALSE errorno is updated
+	*/
+    bool RemoveDirectory(const char *nameDir);
+    
+    
+    /*
+     * COMPULSORY dirEn indicate a directory not a File
+     * isEmpty returns TRUE if the directory indicated by dirEn is empty
+     * else FALSE 
+    */
+    bool isEmpty(DirectoryEntry dirEn);
 
     void List();			// Print the names of all the files
 					//  in the directory
@@ -94,7 +119,7 @@ class Directory {
 
   private:
   
-	char *name;
+	char *nameDirectory;
     int tableSize;			// Number of directory entries
     DirectoryEntry *table;		// Table of pairs: 
 					// <file name, file header location> 

@@ -23,16 +23,16 @@
 #include "copyright.h"
 #include "utility.h"
 #include "filehdr.h"
-#include "directory.h"
+#include  "directory.h"
 
 //----------------------------------------------------------------------
 // Directory::Directory
 // 	cf header file
 //----------------------------------------------------------------------
 
-Directory::Directory(int size, char *nameDirectory, int sec, int fatherSec)
+Directory::Directory(int size, char *nameDir, int sec, int fatherSec)
 {
-	strcpy(name, nameDirectory);
+	strcpy(nameDirectory, nameDir);
     table = new DirectoryEntry[size];
     tableSize = size;
     
@@ -40,19 +40,19 @@ Directory::Directory(int size, char *nameDirectory, int sec, int fatherSec)
     
     // for the currentDirectory "."
 	table[currentDirectory].isDirectory = 1;
-	table[currentDirectory].isUse = TRUE;
+	table[currentDirectory].inUse = TRUE;
 	table[currentDirectory].sector = sec;
 	strcpy(table[currentDirectory].name, nameCurrentDirectory);
 	
 	// for the fatherDirectory ".."
 	table[fatherDirectory].isDirectory = 1;
-	table[fatherDirectory].isUse = TRUE;
+	table[fatherDirectory].inUse = TRUE;
 	table[fatherDirectory].sector = fatherSec;
 	strcpy(table[fatherDirectory].name, nameFatherDirectory);
 	int i;
 	for (i = specialEntry; i < tableSize; i++)
 	{
-		isUse = FALSE;
+		table[i].inUse = FALSE;
 		
 	}
 }
@@ -64,7 +64,7 @@ Directory::Directory(int size, char *nameDirectory, int sec, int fatherSec)
 
 Directory::~Directory()
 { 
-    //Check if directory is empty before deletion
+    
     delete [] table;
 } 
 
@@ -159,23 +159,57 @@ Directory::Add(const char *name, int newSector, int isDirectory)
     return FALSE;	// no space.  Fix when we have extensible files.
 }
 
-//----------------------------------------------------------------------
-// Directory::Remove
-// 	Remove a file name from the directory.  Return TRUE if successful;
-//	return FALSE if the file isn't in the directory. 
-//
-//	"name" -- the file name to be removed
-//----------------------------------------------------------------------
-
 bool
-Directory::Remove(const char *name)
+Directory::RemoveFile(const char *nameFi)
 { 
-    int i = FindIndex(name);
+    int i = FindIndex(nameFi);
 
     if (i == -1)
-	return FALSE; 		// name not in directory
+    {
+		errorno = EFILENOTEXIST;
+		return FALSE; 		// name not in directory
+	}
+		
+	if (table[i].isDirectory == 1)
+	{
+		errorno = EWTYPE;
+		return FALSE;
+	}
     table[i].inUse = FALSE;
     return TRUE;	
+}
+
+
+
+bool Directory::RemoveDirectory(const char *nameDir)
+{
+	int i = FindIndex(nameDir);
+	if (i == -1)
+    {
+		errorno = EDIRNOTEXIST;
+		return FALSE; 		// name not in directory
+	}
+	
+	if (table[i].isDirectory == 0)
+	{
+		errorno = EWTYPE;
+		return FALSE;
+	}
+	
+	if(isEmpty(table[i]) == TRUE)
+	{
+		table[i].inUse = FALSE;
+		return TRUE;
+	}
+	errorno = EDIRNOTEMPTY;
+	return FALSE;
+	
+	
+}
+
+bool Directory::isEmpty(DirectoryEntry dirEn)
+{
+	return FALSE;
 }
 
 //----------------------------------------------------------------------
