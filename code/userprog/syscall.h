@@ -47,7 +47,7 @@
 #define SC_GetTid 26
 #define SC_GetPid 27
 #define SC_GetPPid 28
- #define SC_Waitpid 29
+#define SC_Waitpid 29
 
 #ifdef IN_USER_MODE
 
