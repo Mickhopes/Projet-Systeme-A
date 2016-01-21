@@ -248,11 +248,10 @@ PostOffice::PostalDelivery()
     PacketHeader pktHdr;
     MailHeader mailHdr;
     char *buffer = new char[MaxPacketSize];
-
+    DEBUG('r', "PostalDelivery commence\n");
     for (;;) {
         // first, wait for a message
         messageAvailable->P();
-        DEBUG('r', "coucou\n");
         pktHdr = network->Receive(buffer);
 
         mailHdr = *(MailHeader *)buffer;
@@ -265,20 +264,20 @@ PostOffice::PostalDelivery()
     	ASSERT(0 <= mailHdr.to && mailHdr.to < numBoxes);
     	ASSERT(mailHdr.length <= MaxMailSize);
 
-        DEBUG('r', "%d est un ack ? %d\n", netAddr, mailHdr.isAck);
+        DEBUG('r', "PostalDelivery : %d a recu un message : mailHdr.isAck = %d\n", netAddr, mailHdr.isAck);
         if (mailHdr.isAck) {
+            DEBUG('r', "Postal delivery a detecté un ACK a destination de %d par %d\n", netAddr, mailHdr.ack);
             ackLock->Acquire();
-            DEBUG('r', "%d a recu un ack de %d\n", netAddr, mailHdr.ack);
             ackTable[mailHdr.to][mailHdr.ack % NbAckTable] = 2;
             ackLock->Release();
         } else {
             // put into mailbox
             boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeader));
-
-            DEBUG('r', "%d envoie un ack de %d à %d sur la boite %d\n", netAddr, mailHdr.ack, pktHdr.from, mailHdr.from);
+            DEBUG('r', "PostalDelivery : %d envoie un ack num %d à %d sur la boite %d\n", netAddr, mailHdr.ack, pktHdr.from, mailHdr.from);
             SendAck(pktHdr, mailHdr);
         }
     }
+    DEBUG('r', "PostalDelivery fini\n");
 }
 
 //----------------------------------------------------------------------
@@ -317,6 +316,11 @@ PostOffice::Send(PacketHeader pktHdr, MailHeader mailHdr, const char* data)
 
     sendLock->Acquire();   		// only one message can be sent
 					// to the network at any one time
+    DEBUG('r', "Send : pktHdr.to = %d\n", pktHdr.to);
+    DEBUG('r', "Send : mailHdr.to = %d\n", mailHdr.to);
+    DEBUG('r', "Send : mailHdr.from = %d\n", mailHdr.from);
+    DEBUG('r', "Send : data = %s\n", data);
+    DEBUG('r', "Send : isAck = %d\n", mailHdr.isAck);
     network->Send(pktHdr, buffer);
     messageSent->P();			// wait for interrupt to tell us
 					// ok to send the next message
@@ -342,7 +346,7 @@ PostOffice::SendReliable(PacketHeader pktHdr, MailHeader mailHdr, const char* da
     // We set the ack index that we will wait in the ackTable
     mailHdr.isAck = 0;
     FindAck(&mailHdr);
-    DEBUG('r', "%d a son ack réglé à %d\n", netAddr, mailHdr.ack);
+    DEBUG('r', "Pour %d, FdindAck a trouvé un num dispo : %d\n", netAddr, mailHdr.ack);
 
     // We resend until we receive the ack
     for(int i = 0; i < MAXREEMISSIONS; i++) {
@@ -357,7 +361,7 @@ PostOffice::SendReliable(PacketHeader pktHdr, MailHeader mailHdr, const char* da
         // Then we check if the ack has arrived
         ackLock->Acquire();
         if (ackTable[mailHdr.from][mailHdr.ack] == 2) {
-            DEBUG('r', "%d a eu sa réponse\n", netAddr);
+            DEBUG('r', "%d a recu un Ack car la case est a 2\n", netAddr);
             ackLock->Release();
             break;
         }
@@ -384,17 +388,20 @@ PostOffice::SendAck(PacketHeader pktHdr, MailHeader mailHdr)
     const char *data = "ack";
 
     outPktHdr.to = pktHdr.from;
+    DEBUG('r', "SendAck : outPktHdr.to = %d\n", outPktHdr.to);
     outMailHdr.to = mailHdr.from;
+    DEBUG('r', "SendAck : outMailHdr.to = %d\n", outMailHdr.to);
     outMailHdr.from = 0; // This instruction is useless since we don't respond to an ack
     outMailHdr.length = strlen(data) + 1;
     outMailHdr.isAck = 1;
+    DEBUG('r', "SendAck : outMailHdr.isAck = %d\n", outMailHdr.isAck);
     outMailHdr.ack = mailHdr.ack;
 
     DEBUG('r', "%d tente d'envoyer un ack a %d sur la boite %d avec un ack de %d\n", netAddr, outPktHdr.to, outMailHdr.to, outMailHdr.ack);
 
     Send(outPktHdr, outMailHdr, data);
 
-    DEBUG('r', "%d c'est send abruti\n", netAddr);
+    DEBUG('r', "%d Sortie de SendAck\n", netAddr);
 }
 
 //----------------------------------------------------------------------
