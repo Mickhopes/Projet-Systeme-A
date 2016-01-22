@@ -49,9 +49,8 @@ MailTest(int farAddr)
         outMailHdr.length = strlen(data) + 1;
         
         // Send the first message
-        postOffice->SendPieces(outPktHdr, outMailHdr, data); 
+        postOffice->SendReliable(outPktHdr, outMailHdr, data); 
 
-        memset(buffer, '\0', MaxMailSize*sizeof(char));
         // Wait for the first message from the other machine
         postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
         printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);

@@ -255,8 +255,8 @@ PostOffice::PostalDelivery()
 {
     PacketHeader pktHdr;
     MailHeader mailHdr, oldMail;
-    oldMail.from = -1;
-    oldMail.ack = 99999;
+    oldMail.ack = 9999;
+    oldMail.from = 9999;
     char *buffer = new char[MaxPacketSize];
     DEBUG('r', "PostalDelivery commence\n");
     for (;;) {
@@ -282,7 +282,8 @@ PostOffice::PostalDelivery()
             ackLock->Release();
         } else {
             if (!(oldMail.from == mailHdr.from && oldMail.ack == mailHdr.ack)) {
-                oldMail = mailHdr;
+                oldMail.from = mailHdr.from;
+                oldMail.ack = mailHdr.ack;
 
                 // put into mailbox
                 boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeader));
@@ -540,6 +541,8 @@ PostOffice::FindAck(MailHeader* mailHdr)
     while(ackTable[mailHdr->from][ackNumber[mailHdr->from] % NbAckTable] != 0) {
         ackNumber[mailHdr->from]++;
     }
-    mailHdr->ack = ackNumber[mailHdr->from];
+    mailHdr->ack = ackNumber[mailHdr->from]++;
+    ackTable[mailHdr->from][mailHdr->ack % NbAckTable] = 1;
+
     ackLock->Release();
 }
