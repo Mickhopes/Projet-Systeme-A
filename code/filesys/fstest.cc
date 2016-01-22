@@ -29,8 +29,10 @@
 //----------------------------------------------------------------------
 
 void
-Copy(const char *from, const char *to)
+Copy(const char *fromARG,const char *toARG)
 {
+	char *from = (char*)fromARG;
+	char *to = (char*)toARG;
     FILE *fp;
     OpenFile* openFile;
     int amountRead, fileLength;
@@ -122,24 +124,26 @@ Print(char *name)
 static void 
 FileWrite()
 {
+	const char *fileNa = FileName;
     OpenFile *openFile;    
     int i, numBytes;
 
     printf("Sequential write of %d byte file, in %zd byte chunks\n", 
 	FileSize, ContentSize);
-    if (!fileSystem->Create(FileName, 0)) {
-      printf("Perf test: can't create %s\n", FileName);
+	
+    if (!fileSystem->Create((char*)fileNa, 0)) {
+      printf("Perf test: can't create %s\n", fileNa);
       return;
     }
-    openFile = fileSystem->Open(FileName);
+    openFile = fileSystem->Open((char*)fileNa);
     if (openFile == NULL) {
-	printf("Perf test: unable to open %s\n", FileName);
+	printf("Perf test: unable to open %s\n", fileNa);
 	return;
     }
     for (i = 0; i < FileSize; i += ContentSize) {
         numBytes = openFile->Write(Contents, ContentSize);
 	if (numBytes < 10) {
-	    printf("Perf test: unable to write %s\n", FileName);
+	    printf("Perf test: unable to write %s\n", fileNa);
 	    delete openFile;
 	    return;
 	}
@@ -150,6 +154,7 @@ FileWrite()
 static void 
 FileRead()
 {
+	const char *fileNa = FileName;
     OpenFile *openFile;    
     char *buffer = new char[ContentSize];
     int i, numBytes;
@@ -157,15 +162,15 @@ FileRead()
     printf("Sequential read of %d byte file, in %zd byte chunks\n", 
 	FileSize, ContentSize);
 
-    if ((openFile = fileSystem->Open(FileName)) == NULL) {
-	printf("Perf test: unable to open file %s\n", FileName);
+    if ((openFile = fileSystem->Open((char*)fileNa)) == NULL) {
+	printf("Perf test: unable to open file %s\n", (char*)fileNa);
 	delete [] buffer;
 	return;
     }
     for (i = 0; i < FileSize; i += ContentSize) {
         numBytes = openFile->Read(buffer, ContentSize);
 	if ((numBytes < 10) || strncmp(buffer, Contents, ContentSize)) {
-	    printf("Perf test: unable to read %s\n", FileName);
+	    printf("Perf test: unable to read %s\n", (char*)fileNa);
 	    delete openFile;
 	    delete [] buffer;
 	    return;
@@ -178,11 +183,12 @@ FileRead()
 void
 PerformanceTest()
 {
+	const char *fileNa = FileName;
     printf("Starting file system performance test:\n");
     stats->Print();
     FileWrite();
     FileRead();
-    if (!fileSystem->Remove(FileName)) {
+    if (!fileSystem->Remove((char*)fileNa)) {
       printf("Perf test: unable to remove %s\n", FileName);
       return;
     }

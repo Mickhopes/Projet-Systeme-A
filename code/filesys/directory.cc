@@ -39,12 +39,12 @@ Directory::Directory(int size, int sec, int fatherSec)
     
     // for the currentDirectory "."
 	table[currentDirectory].isDirectory = 1;
-	table[currentDirectory].inUse = TRUE;
+	table[currentDirectory].inUse = true;
 	table[currentDirectory].sector = sec;
 	
 	// for the fatherDirectory ".."
 	table[fatherDirectory].isDirectory = 1;
-	table[fatherDirectory].inUse = TRUE;
+	table[fatherDirectory].inUse = true;
 	table[fatherDirectory].sector = fatherSec;
 	int i;
 	for (i = specialEntry; i < tableSize; i++)
@@ -63,12 +63,12 @@ Directory::Directory(int size)
     
     // for the currentDirectory "."
 	table[currentDirectory].isDirectory = 1;
-	table[currentDirectory].inUse = TRUE;
+	table[currentDirectory].inUse = true;
 	table[currentDirectory].sector = 1;
 	
 	// for the fatherDirectory ".."
 	table[fatherDirectory].isDirectory = 1;
-	table[fatherDirectory].inUse = TRUE;
+	table[fatherDirectory].inUse = true;
 	table[fatherDirectory].sector = 1;
 	int i;
 	for (i = specialEntry; i < tableSize; i++)
@@ -124,11 +124,11 @@ Directory::WriteBack(OpenFile *file)
 //----------------------------------------------------------------------
 
 int
-Directory::FindIndex(const char *name)
+Directory::FindIndex(char *name)
 {
     for (int i = 0; i < tableSize; i++)
         if (table[i].inUse && !strncmp(table[i].name, name, FileNameMaxLen))
-	    return i;
+			return i;
     return -1;		// name not in directory
 }
 
@@ -142,95 +142,136 @@ Directory::FindIndex(const char *name)
 //----------------------------------------------------------------------
 
 int
-Directory::Find(const char *name)
+Directory::Find(char *name)
 {
     int i = FindIndex(name);
 
     if (i != -1)
-	return table[i].sector;
+		return table[i].sector;
     return -1;
 }
 
-//----------------------------------------------------------------------
-// Directory::Add
-// 	Add a file or a sub-directory into the directory.  Return TRUE if successful;
-//	return FALSE if the file name is already in the directory, or if
-//	the directory is completely full, and has no more space for
-//	additional file names.
-//
-//	"name" -- the name of the file being added
-//	"newSector" -- the disk sector containing the added file's header
-//	"isDirectory" -- indicates if the new addition is a sub-directory	
-//----------------------------------------------------------------------
 
-bool
-Directory::Add(const char *name, int newSector, int isDirectory)
+bool Directory::AddFile(char *name, int newSector)
 { 
-    if (FindIndex(name) != -1)
-	return FALSE;
+    for (int i = 0; i < tableSize; i++)
+        if (!table[i].inUse) {
+            table[i].inUse = true;
+            strncpy(table[i].name, name, FileNameMaxLen); 
+            table[i].sector = newSector;
+            table[i].isDirectory = 0;
+	}
+    return true;	
+}
+
+
+bool Directory::AddDirectory(char *name, int newSector)
+{ 
+    
 
     for (int i = 0; i < tableSize; i++)
         if (!table[i].inUse) {
-            table[i].inUse = TRUE;
+            table[i].inUse = true;
             strncpy(table[i].name, name, FileNameMaxLen); 
             table[i].sector = newSector;
-            table[i].isDirectory = isDirectory;
-        return TRUE;
+            table[i].isDirectory = 1;
 	}
-    return FALSE;	// no space.  Fix when we have extensible files.
+    return true;	
+}
+
+
+bool Directory::Add(char *name, int newSector, int isDirectory)
+{ 
+    if (FindIndex(name) != -1)
+		return false;
+
+	if(DirectoryIsFull())
+		return false;
+	else
+	{
+		if(isDirectory == 0)
+			return AddFile(name, newSector);
+		else
+			return AddDirectory(name, newSector);
+	}
+    return false;	//for compilation
 }
 
 bool
-Directory::RemoveFile(const char *nameFi)
+Directory::RemoveFile(char *nameFi)
 { 
     int i = FindIndex(nameFi);
-
-    if (i == -1)
-    {
-		errorno = EFILENOTEXIST;
-		return FALSE; 		// name not in directory
-	}
-		
+    
 	if (table[i].isDirectory == 1)
 	{
 		errorno = EWTYPE;
-		return FALSE;
+		return false;
 	}
-    table[i].inUse = FALSE;
-    return TRUE;	
+    table[i].inUse = false;
+    return true;	
 }
 
 
 
-bool Directory::RemoveDirectory(int sectorDir)
+bool Directory::RemoveDirectory(char *nameDir)
 {
 	int i = FindIndex(nameDir);
-	if (i == -1)
-    {
-		errorno = EDIRNOTEXIST;
-		return FALSE; 		// name not in directory
-	}
+	
 	
 	if (table[i].isDirectory == 0)
 	{
 		errorno = EWTYPE;
-		return FALSE;
+		return false;
 	}
 	
-	if(isEmpty(table[i]) == TRUE)
+	if(DirectoryIsEmpty() == TRUE)
 	{
-		table[i].inUse = FALSE;
-		return TRUE;
+		table[i].inUse = false;
+		return true;
 	}
 	errorno = EDIRNOTEMPTY;
-	return FALSE;
+	return false;
 	
 	
 }
 
-bool Directory::isEmpty(DirectoryEntry dirEn)
+bool Directory::Remove(char *name)	
 {
-	return FALSE;
+	int i = FindIndex(name);
+	if (i == -1)
+    {
+		errorno = EDIRNOTEXIST;
+		return false; 		// name not in directory
+	}
+	if (table[i].isDirectory == 0)
+	{
+		return RemoveFile(name);
+	}
+	else
+	{
+		return RemoveDirectory(name);
+	}
+	
+}
+
+bool Directory::DirectoryIsEmpty()
+{
+	for(int i = specialEntry; i < tableSize; i++)
+	{
+		if(table[i].inUse == true)
+			return false;
+	}
+	return true;
+}
+
+bool Directory::DirectoryIsFull()
+{
+	for(int i = specialEntry; i < tableSize; i++)
+	{
+		if(table[i].inUse == false)
+			return false;
+	}
+	return true;
 }
 
 //----------------------------------------------------------------------

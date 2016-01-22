@@ -38,6 +38,8 @@
 #include "copyright.h"
 #include "openfile.h"
 
+#define NumDirEntries	10
+
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
 				// calls to UNIX, until the real file system
 				// implementation is available
@@ -45,7 +47,7 @@ class FileSystem {
   public:
     FileSystem(bool format) {}
 
-    bool Create(const char *name, int initialSize) { 
+    bool Create(char *name, int initialSize) { 
 	int fileDescriptor = OpenForWrite(name);
 
 	if (fileDescriptor == -1) return FALSE;
@@ -53,7 +55,7 @@ class FileSystem {
 	return TRUE; 
 	}
 	
-	bool CreateDirectory(const char *name);
+	bool CreateDirectory(char *name);
 
     OpenFile* Open(char *name) {
 	  int fileDescriptor = OpenForReadWrite(name, FALSE);
@@ -76,14 +78,14 @@ class FileSystem {
 					// the disk, so initialize the directory
     					// and the bitmap of free blocks.
 	
-	bool CreateDirectory(const char *name);
+	bool CreateDirectory(char *name);
 	
-    bool Create(const char *name, int initialSize);  	
+    bool Create(char *name, int initialSize);  	
 					// Create a file (UNIX creat)
 
-    OpenFile* Open(const char *name); 	// Open a file (UNIX open)
+    OpenFile* Open(char *name); 	// Open a file (UNIX open)
 
-    bool Remove(const char *name); 	// Delete a file (UNIX unlink)
+    bool Remove(char *name); 	// Delete a file (UNIX unlink)
 
     void List();			// List all the files in the file system
 

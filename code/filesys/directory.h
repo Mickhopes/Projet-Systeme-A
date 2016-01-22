@@ -81,43 +81,80 @@ class Directory {
     void WriteBack(OpenFile *file);	// Write modifications to 
 					// directory contents back to disk
 
-    int Find(const char *name);		// Find the sector number of the 
+    int Find(char *name);		// Find the sector number of the 
 					// FileHeader for file: "name"
 
-    bool AddFile(const char *name, int newSector);  // Add a file name into the directory
+	/*
+	 * Add a file into a directory
+	 * 
+	 * name is the name of new File
+	 * newsector  is the sector where the file is save
+	*/
+    bool AddFile(char *name, int newSector);  // Add a file name into the directory
+    /*
+     * Add a sub-directory into the directory
+     * 
+     * name is the name of new directory
+     * newsector  is the sector where the directory is save
+    */
+    bool AddDirectory(char * name, int newSector); //Add a directory into a directory
+	
+	/*
+	 * Add calls functions AddFile or AddDirectory
+	 * According to target
+	 * before calling function add 	verify if DirectoryIsFull and return false if is full 
+	 * 								verify if name exist and return false if exists
+	 * returns TRUE if successful, FALSE otherwise 
+	 * name is the name of directory or file
+	 * newSector is the sector where the file (or directory) is save
+	 * isDirectory indicated the type of target(0 for directory and 1 for directory)
+	 */
+    bool Add(char *name, int newSector, int isDirectory);
     
-    bool AddDirectory(int newSector);
 
 
 	/*
-	 * remove file with name = nameFile
+	 * remove file with name = nameFile in directory
 	 * return TRUE if success
 	 * FALSE else
 	 * when return FALSE errorno is updated
 	*/
-    bool RemoveFile(const char *nameFi);	// Remove a file from the directory
+    bool RemoveFile(char *nameFi);
     
     /*
-	 * remove directory with name = nameDir
+	 * remove directory with name = nameDir in directory
 	 * return TRUE if success
 	 * FALSE else
 	 * when return FALSE errorno is updated
 	*/
-    bool RemoveDirectory(int sector);
+    bool RemoveDirectory(char *nameDir);
+    
+    /*
+     * function remove call RemoveFile or removeDirectory
+     * according to target's type
+     * same return as for the two called functions 
+    */
+    bool Remove(char *name);
     
     
     /*
-     * COMPULSORY dirEn indicate a directory not a File
-     * isEmpty returns TRUE if the directory indicated by dirEn is empty
+     * DirectoryIsEmpty returns TRUE if the directory is empty
      * else FALSE 
     */
-    bool isEmpty(DirectoryEntry dirEn);
+    bool DirectoryIsEmpty();
+    
+    /*
+     * DirectoryIsEmpty returns TRUE if the directory is full
+     * else FALSE 
+    */
+    bool DirectoryIsFull();
 
     void List();			// Print the names of all the files
 					//  in the directory
     void Print();			// Verbose print of the contents
 					//  of the directory -- all the file
-					//  names and their contents.
+					//  names and their contents.**
+	
 	
 
   private:
@@ -126,9 +163,15 @@ class Directory {
     int tableSize;			// Number of directory entries
     DirectoryEntry *table;		// Table of pairs: 
 					// <file name, file header location> 
-
-    int FindIndex(const char *name);	// Find the index into the directory 
-					//  table corresponding to "name"
+	//----------------------------------------------------------------------
+	// FindIndex
+	// 	Look up file name in directory, and return its location in the table of
+	//	directory entries.  Return -1 if the name isn't in the directory.
+	//	Works for subdirectories as well as files.
+	//	"name" -- the file name to look up
+	//----------------------------------------------------------------------
+    int FindIndex(char *name);	
+		
 };
 
 #endif // DIRECTORY_H

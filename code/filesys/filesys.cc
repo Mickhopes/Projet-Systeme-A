@@ -61,7 +61,6 @@
 // supports extensible files, the directory size sets the maximum number 
 // of files that can be loaded onto the disk.
 #define FreeMapFileSize 	(NumSectors / BitsInByte)
-#define NumDirEntries 		10
 #define DirectoryFileSize 	(sizeof(DirectoryEntry) * NumDirEntries)
 
 //----------------------------------------------------------------------
@@ -172,7 +171,7 @@ FileSystem::FileSystem(bool format)
 //----------------------------------------------------------------------
 
 bool
-FileSystem::Create(const char *name, int initialSize)
+FileSystem::Create(char *name, int initialSize)
 {
     Directory *directory;
     BitMap *freeMap;
@@ -225,7 +224,7 @@ FileSystem::Create(const char *name, int initialSize)
 //----------------------------------------------------------------------
 
 OpenFile *
-FileSystem::Open(const char *name)
+FileSystem::Open(char *name)
 { 
     Directory *directory = new Directory(NumDirEntries);
     OpenFile *openFile = NULL;
@@ -255,7 +254,7 @@ FileSystem::Open(const char *name)
 //----------------------------------------------------------------------
 
 bool
-FileSystem::Remove(const char *name)
+FileSystem::Remove(char *name)
 { 
     Directory *directory;
     BitMap *freeMap;
@@ -277,7 +276,7 @@ FileSystem::Remove(const char *name)
 
     fileHdr->Deallocate(freeMap);  		// remove data blocks
     freeMap->Clear(sector);			// remove header block
-    directory->RemoveFile(name);
+    directory->Remove(name);
 
     freeMap->WriteBack(freeMapFile);		// flush to disk
     directory->WriteBack(directoryFile);        // flush to disk
