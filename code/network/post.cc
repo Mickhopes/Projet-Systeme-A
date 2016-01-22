@@ -22,6 +22,12 @@
 
 #include <strings.h> /* for bzero */
 
+MailHeader::MailHeader()
+{
+    last = 1;
+    sequence = 0;
+}
+
 //----------------------------------------------------------------------
 // Mail::Mail
 //      Initialize a single mail message, by concatenating the headers to
@@ -248,7 +254,9 @@ void
 PostOffice::PostalDelivery()
 {
     PacketHeader pktHdr;
-    MailHeader mailHdr;
+    MailHeader mailHdr, oldMail;
+    oldMail.from = -1;
+    oldMail.ack = 99999;
     char *buffer = new char[MaxPacketSize];
     DEBUG('r', "PostalDelivery commence\n");
     for (;;) {
@@ -273,9 +281,14 @@ PostOffice::PostalDelivery()
             ackTable[mailHdr.to][mailHdr.ack % NbAckTable] = 2;
             ackLock->Release();
         } else {
-            // put into mailbox
-            boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeader));
-            DEBUG('r', "PostalDelivery : %d envoie un ack num %d à %d sur la boite %d\n", netAddr, mailHdr.ack, pktHdr.from, mailHdr.from);
+            if (!(oldMail.from == mailHdr.from && oldMail.ack == mailHdr.ack)) {
+                oldMail = mailHdr;
+
+                // put into mailbox
+                boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeader));
+                DEBUG('r', "PostalDelivery : %d envoie un ack num %d à %d sur la boite %d\n", netAddr, mailHdr.ack, pktHdr.from, mailHdr.from);
+            }
+
             SendAck(pktHdr, mailHdr);
         }
     }
@@ -305,6 +318,7 @@ PostOffice::Send(PacketHeader pktHdr, MailHeader mailHdr, const char* data)
 	printf("Post send: ");
 	PrintHeader(pktHdr, mailHdr);
     }
+    
     ASSERT(mailHdr.length <= MaxMailSize);
     ASSERT(0 <= mailHdr.to && mailHdr.to < numBoxes);
     
@@ -416,23 +430,35 @@ PostOffice::SendAck(PacketHeader pktHdr, MailHeader mailHdr)
 //----------------------------------------------------------------------
 
 void 
-SendPieces(PacketHeader pktHdr, MailHeader mailHdr, const char *data)
+PostOffice::SendPieces(PacketHeader pktHdr, MailHeader mailHdr, const char *data)
 {
     // We copy the data
     char *dataCpy = new char[strlen(data)];
     strcpy(dataCpy, data);
 
-    int size_pkt = MaxPacketSize+sizeof(MailHeader);
-    int size_data = strlen(data);
+    unsigned int size_data = strlen(data);
 
-    char *buff = new char[size_pkt];
+    char *buff = new char[MaxMailSize+1];
 
-    int i = 0
-    while(size_data > size_pkt) {
-        strcpy(buff, dataCpy+i*size_pkt);
+    int i = 0;
+    while(size_data > MaxMailSize) {
+        strncpy(buff, dataCpy+i*MaxMailSize, MaxMailSize);
         mailHdr.last = 0;
+        mailHdr.length = strlen(buff);
+        mailHdr.sequence = i;
+        SendReliable(pktHdr, mailHdr, buff);
 
+        size_data -= MaxMailSize;
         i++;
+    }
+
+    if (size_data > 0) {
+        memset (buff, '\0', (MaxMailSize+1)*sizeof(char));
+        strncpy(buff, dataCpy+i*MaxMailSize, size_data);
+        mailHdr.last = 1;
+        mailHdr.length = strlen(buff);
+        mailHdr.sequence = i;
+        SendReliable(pktHdr, mailHdr, buff);
     }
 }
 
@@ -514,6 +540,6 @@ PostOffice::FindAck(MailHeader* mailHdr)
     while(ackTable[mailHdr->from][ackNumber[mailHdr->from] % NbAckTable] != 0) {
         ackNumber[mailHdr->from]++;
     }
-    mailHdr->ack = ackNumber[mailHdr->from] % NbAckTable;
+    mailHdr->ack = ackNumber[mailHdr->from];
     ackLock->Release();
 }

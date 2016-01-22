@@ -36,6 +36,7 @@ MailTest(int farAddr)
     PacketHeader outPktHdr, inPktHdr;
     MailHeader outMailHdr, inMailHdr;
     const char *data = "Hello there!";
+    //const char *data = "012345678910111213141516171819202122232425262728293031323334353637383940";
     char buffer[MaxMailSize];
     int i = 0;
     while(i < 10) {
@@ -48,8 +49,9 @@ MailTest(int farAddr)
         outMailHdr.length = strlen(data) + 1;
         
         // Send the first message
-        postOffice->SendReliable(outPktHdr, outMailHdr, data); 
+        postOffice->SendPieces(outPktHdr, outMailHdr, data); 
 
+        memset(buffer, '\0', MaxMailSize*sizeof(char));
         // Wait for the first message from the other machine
         postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
         printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
@@ -57,7 +59,36 @@ MailTest(int farAddr)
         i++;
     }
 
-    currentThread->Sleep(100000000);
+    // construct packet, mail header for original message
+    // To: destination machine, mailbox 0
+    // From: our machine, reply to: mailbox 1
+    /*outPktHdr.to = farAddr;     
+    outMailHdr.to = 0;
+    outMailHdr.from = 1;
+    outMailHdr.length = strlen(data) + 1;
+    
+    // Send the first message
+    postOffice->SendPieces(outPktHdr, outMailHdr, data); 
+
+    memset(buffer, '\0', MaxMailSize*sizeof(char));
+    // Wait for the first message from the other machine
+    postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
+    printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
+    fflush(stdout);
+
+    memset(buffer, '\0', MaxMailSize*sizeof(char));
+    // Wait for the first message from the other machine
+    postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
+    printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
+    fflush(stdout);
+
+    memset(buffer, '\0', MaxMailSize*sizeof(char));
+    // Wait for the first message from the other machine
+    postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
+    printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
+    fflush(stdout);*/
+
+    currentThread->Sleep(10000000);
 
     // Then we're done!
     interrupt->Halt();

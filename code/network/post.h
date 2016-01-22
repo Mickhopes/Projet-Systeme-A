@@ -46,6 +46,8 @@ typedef int MailBoxAddress;
 
 class MailHeader {
   public:
+    MailHeader();
+
     MailBoxAddress to;		// Destination mail box
     MailBoxAddress from;	// Mail box to reply to
     unsigned length;		// Bytes of message data (excluding the 
@@ -54,6 +56,7 @@ class MailHeader {
     int isAck;
     unsigned int ack;
     unsigned int last;
+    unsigned int sequence;
 };
 
 // Maximum "payload" -- real data -- that can included in a single message
