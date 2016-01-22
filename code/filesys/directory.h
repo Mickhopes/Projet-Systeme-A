@@ -148,6 +148,12 @@ class Directory {
      * else FALSE 
     */
     bool DirectoryIsFull();
+    
+    /*
+     * DirectoryIs returns TRUE if the directory is root of file system
+     * else FALSE 
+    */
+    bool DirectoryIsRoot();
 
     void List();			// Print the names of all the files
 					//  in the directory

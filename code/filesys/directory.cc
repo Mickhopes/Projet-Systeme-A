@@ -197,8 +197,8 @@ bool Directory::Add(char *name, int newSector, int isDirectory)
     return false;	//for compilation
 }
 
-bool
-Directory::RemoveFile(char *nameFi)
+
+bool Directory::RemoveFile(char *nameFi)
 { 
     int i = FindIndex(nameFi);
     
@@ -210,7 +210,6 @@ Directory::RemoveFile(char *nameFi)
     table[i].inUse = false;
     return true;	
 }
-
 
 
 bool Directory::RemoveDirectory(char *nameDir)
@@ -235,6 +234,7 @@ bool Directory::RemoveDirectory(char *nameDir)
 	
 }
 
+
 bool Directory::Remove(char *name)	
 {
 	int i = FindIndex(name);
@@ -254,6 +254,7 @@ bool Directory::Remove(char *name)
 	
 }
 
+
 bool Directory::DirectoryIsEmpty()
 {
 	for(int i = specialEntry; i < tableSize; i++)
@@ -264,6 +265,7 @@ bool Directory::DirectoryIsEmpty()
 	return true;
 }
 
+
 bool Directory::DirectoryIsFull()
 {
 	for(int i = specialEntry; i < tableSize; i++)
@@ -272,6 +274,11 @@ bool Directory::DirectoryIsFull()
 			return false;
 	}
 	return true;
+}
+
+bool Directory::DirectoryIsRoot()
+{
+	return table[currentDirectory].sector == table[fatherDirectory].sector;
 }
 
 //----------------------------------------------------------------------
