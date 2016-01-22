@@ -123,8 +123,10 @@ void
 MailBox::Get(PacketHeader *pktHdr, MailHeader *mailHdr, char *data) 
 { 
     DEBUG('n', "Waiting for mail in mailbox\n");
+    DEBUG('r', "Avant enlevement liste\n");
     Mail *mail = (Mail *) messages->Remove();	// remove message from list;
 						// will wait if list is empty
+    DEBUG('r', "Apres enlevement liste\n");
 
     *pktHdr = mail->pktHdr;
     *mailHdr = mail->mailHdr;
@@ -349,14 +351,14 @@ PostOffice::SendReliable(PacketHeader pktHdr, MailHeader mailHdr, const char* da
     DEBUG('r', "Pour %d, FdindAck a trouvé un num dispo : %d\n", netAddr, mailHdr.ack);
 
     // We resend until we receive the ack
-    for(int i = 0; i < MAXREEMISSIONS; i++) {
+    int i;
+    for(i = 0; i < MAXREEMISSIONS; i++) {
         // We send the packet
         DEBUG('r', "%d envoie un paquet à %d tentative %d\n", netAddr, pktHdr.to, i+1);
         Send(pktHdr, mailHdr, data);
 
         // We wait a certain amount of time, see TEMPO
-        //currentThread->Sleep(TEMPO);
-        Delay(2);
+        currentThread->Sleep(TEMPO);
 
         // Then we check if the ack has arrived
         ackLock->Acquire();
@@ -367,6 +369,9 @@ PostOffice::SendReliable(PacketHeader pktHdr, MailHeader mailHdr, const char* da
         }
         ackLock->Release();
     }
+
+    if (i == MAXREEMISSIONS)
+        DEBUG('r', "Envoi impossible du message de %d à %d\n", netAddr, pktHdr.to);
 
     // Then we reset our entry in the ackTable
     ackLock->Acquire();
@@ -396,12 +401,39 @@ PostOffice::SendAck(PacketHeader pktHdr, MailHeader mailHdr)
     outMailHdr.isAck = 1;
     DEBUG('r', "SendAck : outMailHdr.isAck = %d\n", outMailHdr.isAck);
     outMailHdr.ack = mailHdr.ack;
+    outMailHdr.last = 1;
 
     DEBUG('r', "%d tente d'envoyer un ack a %d sur la boite %d avec un ack de %d\n", netAddr, outPktHdr.to, outMailHdr.to, outMailHdr.ack);
 
     Send(outPktHdr, outMailHdr, data);
 
     DEBUG('r', "%d Sortie de SendAck\n", netAddr);
+}
+
+//----------------------------------------------------------------------
+// PostOffice::SendPieces
+//  Send a packet with a variable size
+//----------------------------------------------------------------------
+
+void 
+SendPieces(PacketHeader pktHdr, MailHeader mailHdr, const char *data)
+{
+    // We copy the data
+    char *dataCpy = new char[strlen(data)];
+    strcpy(dataCpy, data);
+
+    int size_pkt = MaxPacketSize+sizeof(MailHeader);
+    int size_data = strlen(data);
+
+    char *buff = new char[size_pkt];
+
+    int i = 0
+    while(size_data > size_pkt) {
+        strcpy(buff, dataCpy+i*size_pkt);
+        mailHdr.last = 0;
+
+        i++;
+    }
 }
 
 //----------------------------------------------------------------------

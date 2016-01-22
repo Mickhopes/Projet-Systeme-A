@@ -33,7 +33,7 @@
 
 #define NbAckTable 1000
 
-#define TEMPO 10000 // Set in milliseconds
+#define TEMPO 100000
 #define MAXREEMISSIONS 15
 
 // Mailbox address -- uniquely identifies a mailbox on a given machine.
@@ -53,6 +53,7 @@ class MailHeader {
 
     int isAck;
     unsigned int ack;
+    unsigned int last;
 };
 
 // Maximum "payload" -- real data -- that can included in a single message
@@ -123,6 +124,8 @@ class PostOffice {
     void SendReliable(PacketHeader pktHdr, MailHeader mailHdr, const char *data);
 
     void SendAck(PacketHeader pktHdr, MailHeader mailHdr);
+
+    void SendPieces(PacketHeader pktHdr, MailHeader mailHdr, const char *data);
     
     void Receive(int box, PacketHeader *pktHdr, MailHeader *mailHdr, char *data);
     				// Retrieve a message from "box".  Wait if

@@ -37,7 +37,7 @@ MailTest(int farAddr)
     MailHeader outMailHdr, inMailHdr;
     const char *data = "Hello there!";
     char buffer[MaxMailSize];
-    /*int i = 0;
+    int i = 0;
     while(i < 10) {
         // construct packet, mail header for original message
         // To: destination machine, mailbox 0
@@ -55,29 +55,9 @@ MailTest(int farAddr)
         printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
         fflush(stdout);
         i++;
-    }*/
+    }
 
-        // construct packet, mail header for original message
-        // To: destination machine, mailbox 0
-        // From: our machine, reply to: mailbox 1
-        if (postOffice->GetNetworkAddress() == 0) {
-            outPktHdr.to = farAddr;     
-            outMailHdr.to = 1;
-            outMailHdr.from = 1;
-            outMailHdr.length = strlen(data) + 1;
-        } else {
-            outPktHdr.to = farAddr;     
-            outMailHdr.to = 0;
-            outMailHdr.from = 1;
-            outMailHdr.length = strlen(data) + 1;
-        }
-        // Send the first message
-        postOffice->SendReliable(outPktHdr, outMailHdr, data); 
-
-        // Wait for the first message from the other machine
-        postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
-        DEBUG('r',"Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
-        fflush(stdout);
+    currentThread->Sleep(100000000);
 
     // Then we're done!
     interrupt->Halt();
@@ -123,6 +103,8 @@ RingTest(int numMachines)
         // We send it
         postOffice->SendReliable(outPktHdr, outMailHdr, buffer);
     }
+
+    currentThread->Sleep(100000000);
 
     // Then we're done!
     interrupt->Halt();
