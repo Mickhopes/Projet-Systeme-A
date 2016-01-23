@@ -35,8 +35,8 @@ MailTest(int farAddr)
 {
     PacketHeader outPktHdr, inPktHdr;
     MailHeader outMailHdr, inMailHdr;
-    const char *data = "Hello there!";
-    //const char *data = "012345678910111213141516171819202122232425262728293031323334353637383940";
+    //const char *data = "Hello there!";
+    const char *data = "012345678910111213141516171819202122232425262728293031323334353637383940";
     char buffer[MaxMailSize];
     int i = 0;
     while(i < 10) {
@@ -46,12 +46,13 @@ MailTest(int farAddr)
         outPktHdr.to = farAddr;     
         outMailHdr.to = 0;
         outMailHdr.from = 1;
-        outMailHdr.length = strlen(data) + 1;
+        //outMailHdr.length = strlen(data);
         
         // Send the first message
-        postOffice->SendReliable(outPktHdr, outMailHdr, data); 
+        postOffice->SendPieces(outPktHdr, outMailHdr, data); 
 
         // Wait for the first message from the other machine
+        memset (buffer, '\0', (MaxMailSize));
         postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
         printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
         fflush(stdout);

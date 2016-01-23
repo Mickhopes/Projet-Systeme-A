@@ -257,11 +257,15 @@ PostOffice::PostalDelivery()
     MailHeader mailHdr, oldMail;
     oldMail.ack = 9999;
     oldMail.from = 9999;
+    //char multiReceive[1000];
+    //unsigned int multiLength = 0;
     char *buffer = new char[MaxPacketSize];
-    DEBUG('r', "PostalDelivery commence\n");
+    //DEBUG('r', "PostalDelivery commence\n");
     for (;;) {
         // first, wait for a message
         messageAvailable->P();
+        memset (buffer, '\0', (MaxPacketSize));
+        //memset (multiReceive, '\0', 1000);
         pktHdr = network->Receive(buffer);
 
         mailHdr = *(MailHeader *)buffer;
@@ -284,8 +288,17 @@ PostOffice::PostalDelivery()
             if (!(oldMail.from == mailHdr.from && oldMail.ack == mailHdr.ack)) {
                 oldMail.from = mailHdr.from;
                 oldMail.ack = mailHdr.ack;
+                //DEBUG('w',"mailHdr.last = %d\n",mailHdr.last);
 
-                // put into mailbox
+                //decommenter les deux ligne de declaration plus le memset de multiReceive pour concatener.
+                //Pour concatener les messages qui arrivent tant que last != 1
+                // if (mailHdr.last){
+                //     boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeader));
+                // }else {
+                //     strncpy(multiReceive + multiLength,);
+                // }
+
+                //Commenter la ligne suivante pour la concatenation, cf ci dessus.
                 boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeader));
                 DEBUG('r', "PostalDelivery : %d envoie un ack num %d à %d sur la boite %d\n", netAddr, mailHdr.ack, pktHdr.from, mailHdr.from);
             }
@@ -293,7 +306,7 @@ PostOffice::PostalDelivery()
             SendAck(pktHdr, mailHdr);
         }
     }
-    DEBUG('r', "PostalDelivery fini\n");
+    //DEBUG('r', "PostalDelivery fini\n");
 }
 
 //----------------------------------------------------------------------
@@ -319,7 +332,7 @@ PostOffice::Send(PacketHeader pktHdr, MailHeader mailHdr, const char* data)
 	printf("Post send: ");
 	PrintHeader(pktHdr, mailHdr);
     }
-    
+    DEBUG('r', "mailHdr.length =  %d et MaxMailSize = %d\n",mailHdr.length,MaxMailSize);
     ASSERT(mailHdr.length <= MaxMailSize);
     ASSERT(0 <= mailHdr.to && mailHdr.to < numBoxes);
     
@@ -336,7 +349,7 @@ PostOffice::Send(PacketHeader pktHdr, MailHeader mailHdr, const char* data)
     DEBUG('r', "Send : pktHdr.to = %d\n", pktHdr.to);
     DEBUG('r', "Send : mailHdr.to = %d\n", mailHdr.to);
     DEBUG('r', "Send : mailHdr.from = %d\n", mailHdr.from);
-    DEBUG('r', "Send : data = %s\n", data);
+    DEBUG('r', "Send : data = [%s]\n", data);
     DEBUG('r', "Send : isAck = %d\n", mailHdr.isAck);
     network->Send(pktHdr, buffer);
     messageSent->P();			// wait for interrupt to tell us
@@ -433,29 +446,31 @@ PostOffice::SendAck(PacketHeader pktHdr, MailHeader mailHdr)
 void 
 PostOffice::SendPieces(PacketHeader pktHdr, MailHeader mailHdr, const char *data)
 {
-    // We copy the data
-    char *dataCpy = new char[strlen(data)];
-    strcpy(dataCpy, data);
-
     unsigned int size_data = strlen(data);
 
-    char *buff = new char[MaxMailSize+1];
+    char buff[MaxMailSize-1];
+    memset (buff, '\0', (MaxMailSize-1));
+    DEBUG('r', "SendPieces : strlen(buff) = %d\n",strlen(buff));
 
     int i = 0;
     while(size_data > MaxMailSize) {
-        strncpy(buff, dataCpy+i*MaxMailSize, MaxMailSize);
+        strncpy(buff, data+i*(MaxMailSize-1), MaxMailSize-1);
+        size_data -= MaxMailSize-1;
         mailHdr.last = 0;
+        if (size_data == 0){
+            mailHdr.last = 1;
+        }
         mailHdr.length = strlen(buff);
+        DEBUG('r', "SendPieces : mailHdr.length = %d car buff= [%s]\n",mailHdr.length,buff);
         mailHdr.sequence = i;
         SendReliable(pktHdr, mailHdr, buff);
 
-        size_data -= MaxMailSize;
         i++;
     }
 
     if (size_data > 0) {
-        memset (buff, '\0', (MaxMailSize+1)*sizeof(char));
-        strncpy(buff, dataCpy+i*MaxMailSize, size_data);
+        memset (buff, '\0', (MaxMailSize-1));
+        strncpy(buff, data+i*(MaxMailSize-1), size_data);
         mailHdr.last = 1;
         mailHdr.length = strlen(buff);
         mailHdr.sequence = i;
