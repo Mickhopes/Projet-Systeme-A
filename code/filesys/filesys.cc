@@ -218,55 +218,123 @@ bool FileSystem::Create(char *name, int initialSize)
 }
 
 
+int FileSystem::CutFullNameInTabName(char *fullName, char** tabFullName)
+{
+	int i, j = 0, nbTab = 0;
+	for(i = 0; i < strlen(fullName); i++)
+	{
+		if(fullName[i] == '/')
+		{
+			if(j == 0)
+			{
+				tabFullName[nbTab][j] = fullName[i]; 
+			}
+			j = 0;
+			nbTab++;
+		}
+		else if (fullName[i] != '\0')
+		{
+			tabFullName[nbTab][j] = fullName[i];
+			j++;
+		}
+		else if (fullName[i] == '\0')
+		{
+			nbTab++;
+		}
+	} 
+	return nbTab;
+}
+
+
+Directory *FileSystem::Research(char *name, char *dirName)
+{
+	char **tabName;
+	int nbTab = CutFullNameInTabName(name, tabName);
+	Directory *dr;
+	int sec;
+	if(nbTab == 1 && tabName[0] == '/')
+	{
+		errorno = ENAMEEXIST;
+		return NULL;
+	}
+	else if(strcmp(tabName[0],"/") == 0)
+	{
+		directoryFile = new OpenFile(1); //open root directory
+		dir = new Directory(NumDirEntries);
+   		dir->FetchFrom(directoryFile);
+   		int i;
+   		for(i = 1; i < nbTab-1; i++)
+   		{
+   			sec = dir->FindSectorWithName(tabName[i]);
+   			directoryFile = new OpenFile(sec); //open root directory
+			dir = new Directory(NumDirEntries);
+	   		dir->FetchFrom(directoryFile);			
+   		}
+		dirName = tabName[nbTab-1];
+		return dir;
+		
+	}
+	else
+	{
+		if(nbTab == 1)
+		{
+			dir = new Directory(NumDirEntries);
+	   		dir->FetchFrom(directoryFile);
+	   		dirName = tabName[0];
+			return dir;
+		}
+		else
+		{
+			for(i = 1; i < nbTab-1; i++)
+   			{
+	   			sec = dir->FindSectorWithName(tabName[i]);
+	   			directoryFile = new OpenFile(sec); //open root directory
+				dir = new Directory(NumDirEntries);
+		   		dir->FetchFrom(directoryFile);			
+   			}
+   			dirName = tabName[nbTab-1];
+			return dir;
+		}
+	}
+}
+
+
 int FileSystem::CreateDirectory(char *name)
 {
-  Directory *currentDir = this->GetCurrentDirectory();
-  int currentSec = currentDir->GetTable()[currentDirectory].sector;
-	if(strlen(name) > fileNameMaxLen)
+  	Directory *currentDir = this->GetCurrentDirectory();
+  	char *nme;
+  	Directory *fatherNewDir = Research(name, nme);
+  	
+  	if(fatherNewDir == NULL)
+  	{
+  		errorno = EPATHNOTFIND;
+		return -1;
+  	}
+	if(strlen(nme) > fileNameMaxLen)
 	{
 		errorno = ENMETOOLONG;
 		return -1;
 	}
-	if(currentDir->FindIndexWithName(name) == -1)
+	if(fatherNewDir->FindIndexWithName(nme) == -1)
 	{
 		errorno = ENAMEEXIST;
 		return -1;
 	}
-	if(currentDir->DirectoryIsFull() == true)
+	if(fatherNewDir->DirectoryIsFull() == true)
 	{
 		errorno = EDIRFULL;
 		return -1;
 	}
-	BitMap *maps = new BitMap(NumSectors);
-	maps->FetchFrom(freeMapFile);
-	int freeSec = maps->Find();
-	if(freeSec ==  -1)
+	directoryFile = new OpenFile(fatherNewDir->GetTable()[currentDirectory].sector);
+	if(directoryFile->DirectoryHeader() == 0)
 	{
-		errorno = EHARDDISKFULL;
+		directoryFile = new OpenFile(currentDir->GetTable()[currentDirectory].sector);
+		errorno = EWTYPE;
 		return -1;
 	}
-	currentDir->Add(name,freeSec,1);
 	
-	// create and save into hard disk the header of a new directory
-	FileHeader *newDirectoryHeader = new FileHeader;
-	newDirectoryHeader->WriteBack(freeSec);
-	
-	// create directory
-	
-; 
- Directory *newDirectory = new Directory(NumDirEntries, freeSec,currentSec);
-	OpenFile *newDirectoryFile = new OpenFile(freeSec);
-	
-	//save in hard disk
-	newDirectory->WriteBack(newDirectoryFile);
-	currentDir->WriteBack(directoryFile);
-	maps->WriteBack(freeMapFile);
-	
-	
-	delete newDirectoryFile;
-	delete newDirectory;
-	delete newDirectoryHeader;
-	delete maps;
+	CreateDir(nme);
+	directoryFile = new OpenFile(currentDir->GetTable()[currentDirectory].sector);
 	delete currentDir;
 	return 0;
 }
@@ -291,8 +359,10 @@ FileSystem::Open(char *name)
     DEBUG('f', "Opening file %s\n", name);
     directory->FetchFrom(directoryFile);
     sector = directory->FindSectorWithName(name); 
-    if (sector >= 0) 		
-		openFile = new OpenFile(sector);	// name was found in directory 
+    if (sector >= 0) 	
+    {
+    	openFile = new OpenFile(sector);	// name was found in directory 
+    }	
     delete directory;
     return openFile;				// return NULL if not found
 }
@@ -405,3 +475,40 @@ FileSystem::Print()
     delete freeMap;
     delete directory;
 } 
+
+
+int FileSystem::CreateDir(char *name)
+{
+  	Directory *currentDir = this->GetCurrentDirectory();
+	
+	BitMap *maps = new BitMap(NumSectors);
+	maps->FetchFrom(freeMapFile);
+	int freeSec = maps->Find();
+	if(freeSec ==  -1)
+	{
+		errorno = EHARDDISKFULL;
+		return -1;
+	}
+	currentDir->Add(name,freeSec,1);
+	
+	// create and save into hard disk the header of a new directory
+	FileHeader *newDirectoryHeader = new FileHeader;
+	newDirectoryHeader->WriteBack(freeSec);
+	
+	// create directory
+	Directory *newDirectory = new Directory(NumDirEntries, freeSec,currentDir->GetTable()[currentDirectory].sector);
+	OpenFile *newDirectoryFile = new OpenFile(freeSec);
+	
+	//save in hard disk
+	newDirectory->WriteBack(newDirectoryFile);
+	currentDir->WriteBack(directoryFile);
+	maps->WriteBack(freeMapFile);
+	
+	
+	delete newDirectoryFile;
+	delete newDirectory;
+	delete newDirectoryHeader;
+	delete maps;
+	delete currentDir;
+	return 0;
+}

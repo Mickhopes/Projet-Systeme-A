@@ -80,17 +80,14 @@ class FileSystem {
 	
     bool Create(char *name, int initialSize);  	
 					// Create a file (UNIX creat)
-	
 	/*
-	* CreateDirectory
-	* this function create a directory named name in the current directory
-	* if one error is raise in the function return -1
-	* when the function return -1 errorno is update and the creation is a faillure
+	* createDirectory
+	* call createDir when find the father of the directory where is createDir
 	*
-	* name is the name of the new directory
-	*/				
-	int CreateDirectory(char *name);
-
+	* name is the relative or absolute name of the new directory
+	*/			
+	int createDirectory(char *name);
+	
     OpenFile* Open(char *name); 	// Open a file (UNIX open)
 
     bool Remove(char *name); 	// Delete a file (UNIX unlink)
@@ -121,10 +118,31 @@ class FileSystem {
     void Print();			// List all the files and their contents
 
   private:
-   OpenFile* freeMapFile;		// Bit map of free disk blocks,
+	OpenFile* freeMapFile;		// Bit map of free disk blocks,
 					// represented as a file
-   OpenFile* directoryFile;		// "Root" directory -- list of 
+	OpenFile* directoryFile;		// "Root" directory -- list of 
 					// file names, represented as a file
+	
+	/*
+	* Research
+	* this function search the father directory of the new drectory 
+	* return father directory if is find
+	* else return NULL
+	*
+	* name is the name of the new directory
+	*/				
+	Directory *Research(char *name, char *dirName);
+	
+					
+	/*
+	* CreateDir
+	* this function create a directory named name in the current directory
+	* if one error is raise in the function return -1
+	* when the function return -1 errorno is update and the creation is a faillure
+	*
+	* name is the name of the new directory
+	*/				
+	int CreateDir(char *name);
 };
 
 #endif // FILESYS

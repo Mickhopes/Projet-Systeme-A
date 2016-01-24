@@ -19,6 +19,7 @@
 #define EDIRNOTEMPTY 11	//directory isn't empty
 #define EDIRFULL	12	//directory is full 
 #define EHARDDISKFULL 13	//this error is raise if a hard disk havan't enough free blocks
+#define EPATHNOTFIND 14	// the path name isn't exist
 
 
 
