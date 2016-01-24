@@ -27,44 +27,49 @@
 #include "system.h"
 #include "filehdr.h"
 
-//----------------------------------------------------------------------
-// FileHeader::Allocate
-// 	Initialize a fresh file header for a newly created file.
-//	Allocate data blocks for the file out of the map of free disk blocks.
-//	Return FALSE if there are not enough free blocks to accomodate
-//	the new file.
-//
-//	"freeMap" is the bit map of free disk sectors
-//	"fileSize" is the bit map of free disk sectors
-//----------------------------------------------------------------------
 
-bool
-FileHeader::Allocate(BitMap *freeMap, int fileSize)
+
+bool FileHeader::Allocate(BitMap *freeMap, int fileSize)
 { 
     numBytes = fileSize;
     numSectors  = divRoundUp(fileSize, SectorSize);
     if (freeMap->NumClear() < numSectors)
-	return FALSE;		// not enough space
-
-    for (int i = 0; i < numSectors; i++)
-	dataSectors[i] = freeMap->Find();
-    return TRUE;
+    {
+    	
+    	return false;		// not enough space
+    }
+	int *indirectList;
+	int i, j, allocatedSector = 0;
+	for(i = 0; i < (int)NumDirect && allocatedSector < numSectors; i++)
+	{
+		dataSectors[i] = freeMap->Find();
+		indirectList = new int[IndirectNumber];
+		for(j = 0; j < (int)IndirectNumber && allocatedSector < numSectors; j++)
+		{
+			indirectList[j] = freeMap->Find();
+			allocatedSector++;
+		}
+		synchDisk->WriteSector(dataSectors[i], (char *)indirectList);
+	}
+		
+    return true;
 }
 
-//----------------------------------------------------------------------
-// FileHeader::Deallocate
-// 	De-allocate all the space allocated for data blocks for this file.
-//
-//	"freeMap" is the bit map of free disk sectors
-//----------------------------------------------------------------------
 
-void 
-FileHeader::Deallocate(BitMap *freeMap)
+void FileHeader::Deallocate(BitMap *freeMap)
 {
-    for (int i = 0; i < numSectors; i++) {
-	ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
-	freeMap->Clear((int) dataSectors[i]);
-    }
+    int i,j, desalocatedSector = 0;
+    int *indirectList;
+    for(i = 0; i < (int)NumDirect && desallocatedSector < numSectors; i++)
+	{
+		indirectList = new int[IndirectNumber];
+		synchDisk->ReadSector(dataSectors[i], (char *)indirectList);
+		for(j = 0; j < (int)IndirectNumber && desallocatedSector < numSectors; j++)
+		{
+			desallocatedSector++;
+		}
+		freeMap->Clear(dataSectors[i]);
+	}
 }
 
 //----------------------------------------------------------------------
@@ -93,31 +98,35 @@ FileHeader::WriteBack(int sector)
     synchDisk->WriteSector(sector, (char *)this); 
 }
 
-//----------------------------------------------------------------------
-// FileHeader::ByteToSector
-// 	Return which disk sector is storing a particular byte within the file.
-//      This is essentially a translation from a virtual address (the
-//	offset in the file) to a physical address (the sector where the
-//	data at the offset is stored).
-//
-//	"offset" is the location within the file of the byte in question
-//----------------------------------------------------------------------
 
-int
-FileHeader::ByteToSector(int offset)
+
+int FileHeader::ByteToSector(int offset)
 {
-    return(dataSectors[offset / SectorSize]);
+	int sectorOfByte = offset / SectorSize;
+	int placeInData = sector / IndirectNumber;
+	int indirectListPosition = sector % IndirectNumber;
+	int *indirectList = new int[IndirectNumber];
+	
+	synchDisk->ReadSector(dataSectors[placeInData], (char *)indirectList);
+    return indirectList[indirectListPositon];
 }
 
-//----------------------------------------------------------------------
-// FileHeader::FileLength
-// 	Return the number of bytes in the file.
-//----------------------------------------------------------------------
-
-int
-FileHeader::FileLength()
+int FileHeader::FileLength()
 {
-    return numBytes;
+    return abs(numBytes);
+}
+
+
+int FileHeader::FileDirectory()
+{
+	if (numBytes < 0)
+	{
+		return 1;
+	}
+	else 
+	{
+		return 0;
+	}
 }
 
 //----------------------------------------------------------------------
@@ -131,19 +140,23 @@ FileHeader::Print()
 {
     int i, j, k;
     char *data = new char[SectorSize];
+    int numByte = abs(numBytes);
+    
 
-    printf("FileHeader contents.  File size: %d.  File blocks:\n", numBytes);
+    printf("FileHeader contents.  File size: %d.  File blocks:\n", numByte);
     for (i = 0; i < numSectors; i++)
-	printf("%d ", dataSectors[i]);
+		printf("%d ", dataSectors[i]);
     printf("\nFile contents:\n");
-    for (i = k = 0; i < numSectors; i++) {
-	synchDisk->ReadSector(dataSectors[i], data);
-        for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++) {
-	    if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
-		printf("%c", data[j]);
-            else
-		printf("\\%x", (unsigned char)data[j]);
-	}
+    for (i = k = 0; i < numSectors; i++)
+    {
+		synchDisk->ReadSector(dataSectors[i], data);
+        for (j = 0; (j < SectorSize) && (k < numByte); j++, k++) 
+        {
+			if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
+				printf("%c", data[j]);
+			else
+				printf("\\%x", (unsigned char)data[j]);
+		}
         printf("\n"); 
     }
     delete [] data;

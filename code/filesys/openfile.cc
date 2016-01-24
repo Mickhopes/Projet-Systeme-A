@@ -184,6 +184,11 @@ OpenFile::WriteAt(const char *from, int numBytes, int position)
     return numBytes;
 }
 
+int DirectoryHeader()
+{
+	return hdr->FileDirectory();
+}
+
 //----------------------------------------------------------------------
 // OpenFile::Length
 // 	Return the number of bytes in the file.
@@ -194,3 +199,5 @@ OpenFile::Length()
 { 
     return hdr->FileLength(); 
 }
+
+

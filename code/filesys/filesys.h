@@ -38,7 +38,7 @@
 #include "copyright.h"
 #include "openfile.h"
 
-#define NumDirEntries	10
+
 
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
 				// calls to UNIX, until the real file system
@@ -80,12 +80,43 @@ class FileSystem {
 	
     bool Create(char *name, int initialSize);  	
 					// Create a file (UNIX creat)
+	
+	/*
+	* CreateDirectory
+	* this function create a directory named name in the current directory
+	* if one error is raise in the function return -1
+	* when the function return -1 errorno is update and the creation is a faillure
+	*
+	* name is the name of the new directory
+	*/				
+	int CreateDirectory(char *name);
 
     OpenFile* Open(char *name); 	// Open a file (UNIX open)
 
     bool Remove(char *name); 	// Delete a file (UNIX unlink)
+    
+    
+    
+    
 
-    void List();			// List all the files in the file system
+	/*
+	*List all file and direstory in file system
+	*/
+    void ListAll();		
+    
+    /*
+    * ListName
+    * this function list a directory named name
+    * if it's a file and not a directory just write the name of file
+    * if the name unexist the function do nothing
+    */
+	void ListName(char * name);
+     
+	/*
+	* GetCurrentDirectory
+	* return a current directory;
+	*/				
+	Directory *GetCurrentDirectory();
 
     void Print();			// List all the files and their contents
 

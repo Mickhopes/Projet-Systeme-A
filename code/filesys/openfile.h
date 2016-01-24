@@ -80,11 +80,19 @@ class OpenFile {
     					// Read/write bytes from the file,
 					// bypassing the implicit position.
     int WriteAt(const char *from, int numBytes, int position);
+    
+    /*
+	* DirectoryHeader
+	* return 0 if the file open is a file headers
+	* return 1 else
+	*/
+	int DirectoryHeader();
 
     int Length(); 			// Return the number of bytes in the
 					// file (this interface is simpler 
 					// than the UNIX idiom -- lseek to 
 					// end of file, tell, lseek back 
+	
     
   private:
     FileHeader *hdr;			// Header for this file 

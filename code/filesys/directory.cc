@@ -38,7 +38,6 @@ Directory::Directory(int size, int sec, int fatherSec)
     //Setup of the hierarchy
     
     // for the currentDirectory "."
-	table[currentDirectory].isDirectory = 1;
 	table[currentDirectory].inUse = true;
 	table[currentDirectory].sector = sec;
 	
@@ -127,22 +126,14 @@ int
 Directory::FindIndex(char *name)
 {
     for (int i = 0; i < tableSize; i++)
-        if (table[i].inUse && !strncmp(table[i].name, name, FileNameMaxLen))
+        if (table[i].inUse && !strncmp(table[i].name, name, fileNameMaxLen))
 			return i;
     return -1;		// name not in directory
 }
 
-//----------------------------------------------------------------------
-// Directory::Find
-// 	Look up file name in directory, and return the disk sector number
-//	where the file's header is stored. Return -1 if the name isn't 
-//	in the directory.
-//
-//	"name" -- the file name to look up
-//----------------------------------------------------------------------
 
-int
-Directory::Find(char *name)
+
+int Directory::FindSectorWithName(char *name)
 {
     int i = FindIndex(name);
 
@@ -152,12 +143,27 @@ Directory::Find(char *name)
 }
 
 
+char *Directory::FindNameWithSector(int sector)
+{
+    for (int i = 0; i < tableSize; i++)
+        if (table[i].inUse && table[i].sector == sector)
+			return table[i].name;
+    return NULL;
+}
+
+
+int Directory::FindIndexWithName(char *name)
+{
+    return FindIndex(name);
+}
+
+
 bool Directory::AddFile(char *name, int newSector)
 { 
     for (int i = 0; i < tableSize; i++)
         if (!table[i].inUse) {
             table[i].inUse = true;
-            strncpy(table[i].name, name, FileNameMaxLen); 
+            strncpy(table[i].name, name, fileNameMaxLen); 
             table[i].sector = newSector;
             table[i].isDirectory = 0;
 	}
@@ -167,12 +173,11 @@ bool Directory::AddFile(char *name, int newSector)
 
 bool Directory::AddDirectory(char *name, int newSector)
 { 
-    
 
     for (int i = 0; i < tableSize; i++)
         if (!table[i].inUse) {
             table[i].inUse = true;
-            strncpy(table[i].name, name, FileNameMaxLen); 
+            strncpy(table[i].name, name, fileNameMaxLen); 
             table[i].sector = newSector;
             table[i].isDirectory = 1;
 	}
@@ -182,11 +187,21 @@ bool Directory::AddDirectory(char *name, int newSector)
 
 bool Directory::Add(char *name, int newSector, int isDirectory)
 { 
+	if(strlen(name) > fileNameMaxLen)
+	{
+		errorno = ENAMETOOLONG;
+    	return false;
+	}
     if (FindIndex(name) != -1)
-		return false;
-
+    {
+    	errorno = ENAMENOTEXIST;
+    	return false;
+    }
 	if(DirectoryIsFull())
+	{
+		errorno = EDIRFULL;
 		return false;
+	}	
 	else
 	{
 		if(isDirectory == 0)
@@ -223,11 +238,19 @@ bool Directory::RemoveDirectory(char *nameDir)
 		return false;
 	}
 	
-	if(DirectoryIsEmpty() == TRUE)
+	OpenFile *directoryFile = new OpenFile(table[i].sector);
+	Directory *dir = new Directory(NumDirEntries);
+	dir->FetchFrom(directoryFile);
+	
+	if(dir->DirectoryIsEmpty() == true)
 	{
+		delete dir;
+		delete directoryFile;
 		table[i].inUse = false;
 		return true;
 	}
+	delete dir;
+	delete directoryFile;
 	errorno = EDIRNOTEMPTY;
 	return false;
 	
@@ -279,6 +302,36 @@ bool Directory::DirectoryIsFull()
 bool Directory::DirectoryIsRoot()
 {
 	return table[currentDirectory].sector == table[fatherDirectory].sector;
+}
+
+char *Directory::GetNameDirectory()
+{
+	Directory *currentDir = this;
+	Directory *fatherDir;
+	int fatherSec;
+	char *fullDirectoryName = new char[directoryNameMaxLen];
+	strcpy(fullDirectoryName, "/");
+	char * tmp = new char[directoryNameMaxLen];
+	while(currentDirectory->DirectoryIsRoot == false)
+	{
+		fatherSector = table[fatherDirectory].sector;
+		OpenFile *fatherDirFile = new OpenFile(fatherSector);
+		fatherDir = new Directory(this->tableSize);
+		fatherDir->FetchFrom(fatherDirFile);
+		strcpy(tmp, "/");
+		strcat(tmp,fatherDir->FindNameWithSector(currentDir->table[currentDirectory].sector));
+		strcat(tmp, fullDirectoryName);
+		strcpy(fullDirectoryName, tmp);
+		currentDir = fatherDir;
+	}
+	free(tmp);
+	return fullDirectoryName;
+}
+
+
+DirectoryEntry *Directory::GetTable()
+{
+	return table;
 }
 
 //----------------------------------------------------------------------

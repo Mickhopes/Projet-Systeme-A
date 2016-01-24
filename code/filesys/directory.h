@@ -20,9 +20,11 @@
 #include "openfile.h"
 #include "errorno.h"
 
-#define FileNameMaxLen 		9	// for simplicity, we assume 
+#define fileNameMaxLen 		9	// for simplicity, we assume 
 					// file names are <= 9 characters long
-#define directoryNameMaxLen 9
+#define directoryNameMaxLen 100 // each name of directory is same size of the fileNameMaxLen
+
+#define DepthMaxFile 10
 					
 #define specialEntry 2
 
@@ -31,6 +33,8 @@
 
 #define nameCurrentDirectory "."
 #define nameFatherDirectory ".."
+
+#define NumDirEntries	10
 
 // The following class defines a "directory entry", representing a file
 // in the directory.  Each entry gives the name of the file, and where
@@ -42,10 +46,9 @@
 class DirectoryEntry {
   public:
     bool inUse;				// Is this directory entry in use?
-    int isDirectory;		//if isDirectory = 0 entry is a file else entry is a directory
     int sector;				// Location on disk to find the 
 					//   FileHeader for this file 
-    char name[FileNameMaxLen + 1];	// Text name for file, with +1 for 
+    char name[fileNameMaxLen + 1];	// Text name for file, with +1 for 
 					// the trailing '\0'
 };
 
@@ -80,9 +83,28 @@ class Directory {
     void FetchFrom(OpenFile *file);  	// Init directory contents from disk
     void WriteBack(OpenFile *file);	// Write modifications to 
 					// directory contents back to disk
+					
 
-    int Find(char *name);		// Find the sector number of the 
-					// FileHeader for file: "name"
+	/*
+	* FindSectorWithName
+	* return the sector corresponding to a name in the current directory
+	* if the name isn't exist in this directory return -1
+	*/
+    int FindSectorWithName(char *name);		
+    
+	/*
+	* FindNameWithSector
+	* return the name corresponding to a sector in the current directory
+	* if the sector isn't exist in this directory return NULL
+	*/				
+	char *FindNameWithSector(int sector);
+	
+	/*
+	* FindIndexWithName
+	* return the position corresponding to a name in the current directory
+	* if the name isn't exist in this directory return -1
+	*/				
+	int FindIndexWithName(char *name);
 
 	/*
 	 * Add a file into a directory
@@ -102,9 +124,12 @@ class Directory {
 	/*
 	 * Add calls functions AddFile or AddDirectory
 	 * According to target
-	 * before calling function add 	verify if DirectoryIsFull and return false if is full 
-	 * 								verify if name exist and return false if exists
+	 * before calling function add 	verify if Directory Is Full 
+	 * 								verify if name exist 
+	 *								verify the lenght of name
 	 * returns TRUE if successful, FALSE otherwise 
+	 * errorno is updated
+	 *
 	 * name is the name of directory or file
 	 * newSector is the sector where the file (or directory) is save
 	 * isDirectory indicated the type of target(0 for directory and 1 for directory)
@@ -154,8 +179,19 @@ class Directory {
      * else FALSE 
     */
     bool DirectoryIsRoot();
+    
+    /*
+	* GetNameDirectory return the name of current directory
+    */
+    char *GetNameDirectory();  
+    
+    /*
+    * GetTable
+    * return table
+    */
+    DirectoryEntry *GetTable();
 
-    void List();			// Print the names of all the files
+    void List();	// Print the names of all the files
 					//  in the directory
     void Print();			// Verbose print of the contents
 					//  of the directory -- all the file
@@ -165,17 +201,11 @@ class Directory {
 
   private:
   
-	char *nameDirectory;
+  
     int tableSize;			// Number of directory entries
     DirectoryEntry *table;		// Table of pairs: 
 					// <file name, file header location> 
-	//----------------------------------------------------------------------
-	// FindIndex
-	// 	Look up file name in directory, and return its location in the table of
-	//	directory entries.  Return -1 if the name isn't in the directory.
-	//	Works for subdirectories as well as files.
-	//	"name" -- the file name to look up
-	//----------------------------------------------------------------------
+	
     int FindIndex(char *name);	
 		
 };

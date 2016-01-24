@@ -18,6 +18,7 @@
 #include "bitmap.h"
 
 #define NumDirect 	((SectorSize - 2 * sizeof(int)) / sizeof(int))
+#define IndirectNumber SectorSize / sizeof(int) 
 #define MaxFileSize 	(NumDirect * SectorSize)
 
 // The following class defines the Nachos "file header" (in UNIX terms,  
@@ -37,27 +38,61 @@
 
 class FileHeader {
   public:
-    bool Allocate(BitMap *bitMap, int fileSize);// Initialize a file header, 
-						//  including allocating space 
-						//  on disk for the file data
-    void Deallocate(BitMap *bitMap);  		// De-allocate this file's 
-						//  data blocks
+
+
+	/*
+	* Allocate
+	* Initialize a file header for a new element into the file system
+	* allocate a data blocks
+	* if all step are good return true
+	* return false if the allocation is impossible
+	* if false update errorno
+	*
+	* bitMap is a bit map of free disk sectors
+	* fileSize is the size allocated for the file
+	*/
+    bool Allocate(BitMap *bitMap, int fileSize);
+    
+	/*
+	* Deallocate
+	* Unallocate all spaces allocated for this file
+	* Update the bitMap of free disk sector
+	*
+	* bitmap is the bit map of free disk sector
+	*/
+    void Deallocate(BitMap *bitMap);  		
 
     void FetchFrom(int sectorNumber); 	// Initialize file header from disk
     void WriteBack(int sectorNumber); 	// Write modifications to file header
 					//  back to disk
+					
+	/*
+	* ByteToSector
+	* return a particular byte into the file
+	*
+	* offset is localisation of the bytes research 
+	*/
+    int ByteToSector(int offset);	
 
-    int ByteToSector(int offset);	// Convert a byte offset into the file
-					// to the disk sector containing
-					// the byte
-
+	/*
+	* FileLength
+	* return the number of bytes int the file
+	* absolute value of variable numBytes
+	*/
     int FileLength();			// Return the length of the file 
 					// in bytes
+					
+	/*
+	* FileDirectory
+	* return 0 if is a file header
+	* else return 1 (directory header)
+	*/
+	int FileDirectory();
 
     void Print();			// Print the contents of the file.
 
   private:
-    int numBytes;			// Number of bytes in the file
+    int numBytes;			// Number of bytes in the file if Directory header numBytes = - num of bytes 
     int numSectors;			// Number of data sectors in the file
     int dataSectors[NumDirect];		// Disk sector numbers for each data 
 					// block in the file
