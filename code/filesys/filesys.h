@@ -80,13 +80,25 @@ class FileSystem {
 	
     bool Create(char *name, int initialSize);  	
 					// Create a file (UNIX creat)
-	/*
+    
+    int CutFullNameInTabName(char *fullName, char **tabFullName);
+/*
+	* Research
+	* this function search the father directory of the new drectory 
+	* return father directory if is find
+	* else return NULL
+	*
+	* name is the name of the new directory
+	*/
+    Directory *Research(char *name, char *dirNamee);
+
+    /*
 	* createDirectory
 	* call createDir when find the father of the directory where is createDir
 	*
 	* name is the relative or absolute name of the new directory
 	*/			
-	int createDirectory(char *name);
+	int CreateDirectory(char *name);
 	
     OpenFile* Open(char *name); 	// Open a file (UNIX open)
 
@@ -123,15 +135,7 @@ class FileSystem {
 	OpenFile* directoryFile;		// "Root" directory -- list of 
 					// file names, represented as a file
 	
-	/*
-	* Research
-	* this function search the father directory of the new drectory 
-	* return father directory if is find
-	* else return NULL
-	*
-	* name is the name of the new directory
-	*/				
-	Directory *Research(char *name, char *dirName);
+
 	
 					
 	/*

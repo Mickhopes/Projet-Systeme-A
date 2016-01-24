@@ -221,7 +221,7 @@ bool FileSystem::Create(char *name, int initialSize)
 int FileSystem::CutFullNameInTabName(char *fullName, char** tabFullName)
 {
 	int i, j = 0, nbTab = 0;
-	for(i = 0; i < strlen(fullName); i++)
+	for(i = 0; i < (int)strlen(fullName); i++)
 	{
 		if(fullName[i] == '/')
 		{
@@ -248,11 +248,16 @@ int FileSystem::CutFullNameInTabName(char *fullName, char** tabFullName)
 
 Directory *FileSystem::Research(char *name, char *dirName)
 {
-	char **tabName;
+  char **tabName = new char*[DepthMaxDirectory];
+  int i;
+  for(i = 0; i < DepthMaxDirectory; i++)
+    {
+      tabName[i] = new char[fileNameMaxLen];
+    }
 	int nbTab = CutFullNameInTabName(name, tabName);
-	Directory *dr;
+	Directory *dir;
 	int sec;
-	if(nbTab == 1 && tabName[0] == '/')
+	if(nbTab == 1 && strcmp(tabName[0],"/"))
 	{
 		errorno = ENAMEEXIST;
 		return NULL;
@@ -262,7 +267,6 @@ Directory *FileSystem::Research(char *name, char *dirName)
 		directoryFile = new OpenFile(1); //open root directory
 		dir = new Directory(NumDirEntries);
    		dir->FetchFrom(directoryFile);
-   		int i;
    		for(i = 1; i < nbTab-1; i++)
    		{
    			sec = dir->FindSectorWithName(tabName[i]);
@@ -302,7 +306,7 @@ Directory *FileSystem::Research(char *name, char *dirName)
 int FileSystem::CreateDirectory(char *name)
 {
   	Directory *currentDir = this->GetCurrentDirectory();
-  	char *nme;
+  	char *nme = new char[fileNameMaxLen];
   	Directory *fatherNewDir = Research(name, nme);
   	
   	if(fatherNewDir == NULL)

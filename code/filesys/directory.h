@@ -24,7 +24,7 @@
 					// file names are <= 9 characters long
 #define directoryNameMaxLen 100 // each name of directory is same size of the fileNameMaxLen
 
-#define DepthMaxFile 10
+#define DepthMaxDirectory 10
 					
 #define specialEntry 2
 
