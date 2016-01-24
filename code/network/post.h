@@ -36,6 +36,8 @@
 #define TEMPO 100000
 #define MAXREEMISSIONS 15
 
+#define MAXBUFFERSIZE 1000
+
 // Mailbox address -- uniquely identifies a mailbox on a given machine.
 // A mailbox is just a place for temporary storage for messages.
 typedef int MailBoxAddress;

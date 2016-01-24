@@ -129,10 +129,20 @@ void
 MailBox::Get(PacketHeader *pktHdr, MailHeader *mailHdr, char *data) 
 { 
     DEBUG('n', "Waiting for mail in mailbox\n");
-    DEBUG('r', "Avant enlevement liste\n");
-    Mail *mail = (Mail *) messages->Remove();	// remove message from list;
+
+	char buffer[MAXBUFFERSIZE] = {'\0'};
+	unsigned int lenBuffer = 0;
+	
+	Mail *mail = (Mail *) messages->Remove();	// remove message from list;
 						// will wait if list is empty
-    DEBUG('r', "Apres enlevement liste\n");
+	strncat(buffer, mail->data, mail->mailHdr.length);
+	lenBuffer += mail->mailHdr.length;	
+
+	while (!mail->mailHdr.last) {
+		mail = (Mail *) messages->Remove();
+		strncat(buffer, mail->data, mail->mailHdr.length);
+		lenBuffer += mail->mailHdr.length;
+	}
 
     *pktHdr = mail->pktHdr;
     *mailHdr = mail->mailHdr;
@@ -140,7 +150,7 @@ MailBox::Get(PacketHeader *pktHdr, MailHeader *mailHdr, char *data)
 	printf("Got mail from mailbox: ");
 	PrintHeader(*pktHdr, *mailHdr);
     }
-    bcopy(mail->data, data, mail->mailHdr.length);
+    bcopy(buffer, data, lenBuffer);
 					// copy the message data into
 					// the caller's buffer
     delete mail;			// we've copied out the stuff we
@@ -257,15 +267,13 @@ PostOffice::PostalDelivery()
     MailHeader mailHdr, oldMail;
     oldMail.ack = 9999;
     oldMail.from = 9999;
-    //char multiReceive[1000];
-    //unsigned int multiLength = 0;
+    
     char *buffer = new char[MaxPacketSize];
+
     //DEBUG('r', "PostalDelivery commence\n");
     for (;;) {
         // first, wait for a message
         messageAvailable->P();
-        memset (buffer, '\0', (MaxPacketSize));
-        //memset (multiReceive, '\0', 1000);
         pktHdr = network->Receive(buffer);
 
         mailHdr = *(MailHeader *)buffer;
@@ -286,20 +294,10 @@ PostOffice::PostalDelivery()
             ackLock->Release();
         } else {
             if (!(oldMail.from == mailHdr.from && oldMail.ack == mailHdr.ack)) {
-                oldMail.from = mailHdr.from;
-                oldMail.ack = mailHdr.ack;
+                oldMail = mailHdr;
                 //DEBUG('w',"mailHdr.last = %d\n",mailHdr.last);
-
-                //decommenter les deux ligne de declaration plus le memset de multiReceive pour concatener.
-                //Pour concatener les messages qui arrivent tant que last != 1
-                // if (mailHdr.last){
-                //     boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeader));
-                // }else {
-                //     strncpy(multiReceive + multiLength,);
-                // }
-
-                //Commenter la ligne suivante pour la concatenation, cf ci dessus.
-                boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeader));
+				
+              	boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeader));
                 DEBUG('r', "PostalDelivery : %d envoie un ack num %d à %d sur la boite %d\n", netAddr, mailHdr.ack, pktHdr.from, mailHdr.from);
             }
 
@@ -448,14 +446,15 @@ PostOffice::SendPieces(PacketHeader pktHdr, MailHeader mailHdr, const char *data
 {
     unsigned int size_data = strlen(data);
 
-    char buff[MaxMailSize-1];
-    memset (buff, '\0', (MaxMailSize-1));
+    char buff[MaxMailSize+1];
+	buff[MaxMailSize] = '\0'; 
     DEBUG('r', "SendPieces : strlen(buff) = %d\n",strlen(buff));
 
     int i = 0;
     while(size_data > MaxMailSize) {
-        strncpy(buff, data+i*(MaxMailSize-1), MaxMailSize-1);
-        size_data -= MaxMailSize-1;
+		memset(buff, '\0', MaxMailSize);
+        strncpy(buff, data+i*MaxMailSize, MaxMailSize);
+        size_data -= MaxMailSize;
         mailHdr.last = 0;
         if (size_data == 0){
             mailHdr.last = 1;
@@ -469,10 +468,10 @@ PostOffice::SendPieces(PacketHeader pktHdr, MailHeader mailHdr, const char *data
     }
 
     if (size_data > 0) {
-        memset (buff, '\0', (MaxMailSize-1));
-        strncpy(buff, data+i*(MaxMailSize-1), size_data);
+        memset (buff, '\0', MaxMailSize);
+        strncpy(buff, data+i*MaxMailSize, size_data);
         mailHdr.last = 1;
-        mailHdr.length = strlen(buff);
+        mailHdr.length = strlen(buff);	
         mailHdr.sequence = i;
         SendReliable(pktHdr, mailHdr, buff);
     }
