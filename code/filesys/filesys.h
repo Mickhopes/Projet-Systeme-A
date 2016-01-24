@@ -37,7 +37,7 @@
 
 #include "copyright.h"
 #include "openfile.h"
-
+#include "directory.h"
 
 
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 

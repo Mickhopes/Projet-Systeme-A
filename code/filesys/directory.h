@@ -47,7 +47,8 @@ class DirectoryEntry {
   public:
     bool inUse;				// Is this directory entry in use?
     int sector;				// Location on disk to find the 
-					//   FileHeader for this file 
+					//   FileHeader for this file
+    int isDirectory;
     char name[fileNameMaxLen + 1];	// Text name for file, with +1 for 
 					// the trailing '\0'
 };

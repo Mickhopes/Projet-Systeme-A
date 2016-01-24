@@ -98,10 +98,10 @@ int do_UserThreadJoin(unsigned int threadId){
 				errorno = ESRCH;
 				break;
 			case -2:
-				errorno = EINVAL;
+				errorno = ENVAL;
 				break;
 			case -3:
-				errorno = EDEADLK;
+				errorno = EDEADLCK;
 				break;
 		}
 		return -1;

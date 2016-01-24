@@ -184,7 +184,7 @@ OpenFile::WriteAt(const char *from, int numBytes, int position)
     return numBytes;
 }
 
-int DirectoryHeader()
+int OpenFile::DirectoryHeader()
 {
 	return hdr->FileDirectory();
 }

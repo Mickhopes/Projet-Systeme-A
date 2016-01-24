@@ -189,7 +189,7 @@ bool Directory::Add(char *name, int newSector, int isDirectory)
 { 
 	if(strlen(name) > fileNameMaxLen)
 	{
-		errorno = ENAMETOOLONG;
+		errorno = ENMETOOLONG;
     	return false;
 	}
     if (FindIndex(name) != -1)
@@ -263,7 +263,7 @@ bool Directory::Remove(char *name)
 	int i = FindIndex(name);
 	if (i == -1)
     {
-		errorno = EDIRNOTEXIST;
+		errorno = ENAMENOTEXIST;
 		return false; 		// name not in directory
 	}
 	if (table[i].isDirectory == 0)
@@ -308,12 +308,12 @@ char *Directory::GetNameDirectory()
 {
 	Directory *currentDir = this;
 	Directory *fatherDir;
-	int fatherSec;
 	char *fullDirectoryName = new char[directoryNameMaxLen];
 	strcpy(fullDirectoryName, "/");
 	char * tmp = new char[directoryNameMaxLen];
-	while(currentDirectory->DirectoryIsRoot == false)
+	while(currentDir->DirectoryIsRoot() == false)
 	{
+	  int fatherSector;
 		fatherSector = table[fatherDirectory].sector;
 		OpenFile *fatherDirFile = new OpenFile(fatherSector);
 		fatherDir = new Directory(this->tableSize);
@@ -324,7 +324,7 @@ char *Directory::GetNameDirectory()
 		strcpy(fullDirectoryName, tmp);
 		currentDir = fatherDir;
 	}
-	free(tmp);
+	delete tmp;
 	return fullDirectoryName;
 }
 

@@ -47,7 +47,6 @@
 
 #include "disk.h"
 #include "bitmap.h"
-#include "directory.h"
 #include "filehdr.h"
 #include "filesys.h"
 
@@ -186,7 +185,7 @@ bool FileSystem::Create(char *name, int initialSize)
     directory = new Directory(NumDirEntries);
     directory->FetchFrom(directoryFile);
 
-    if (directory->Find(name) != -1)
+    if (directory->FindSectorWithName(name) != -1)
       success = FALSE;			// file is already in directory
     else 
     {	
@@ -219,12 +218,13 @@ bool FileSystem::Create(char *name, int initialSize)
 }
 
 
-int CreateDirectory(char *name)
+int FileSystem::CreateDirectory(char *name)
 {
-	Directory *currentDir = this->GetCurrentDirectory;
-	if(strlen(name) > FileNameMaxLen)
+  Directory *currentDir = this->GetCurrentDirectory();
+  int currentSec = currentDir->GetTable()[currentDirectory].sector;
+	if(strlen(name) > fileNameMaxLen)
 	{
-		errorno = ENAMETOOLONG;
+		errorno = ENMETOOLONG;
 		return -1;
 	}
 	if(currentDir->FindIndexWithName(name) == -1)
@@ -232,7 +232,7 @@ int CreateDirectory(char *name)
 		errorno = ENAMEEXIST;
 		return -1;
 	}
-	if(currentDir->DirectoryIsFull == true)
+	if(currentDir->DirectoryIsFull() == true)
 	{
 		errorno = EDIRFULL;
 		return -1;
@@ -252,7 +252,9 @@ int CreateDirectory(char *name)
 	newDirectoryHeader->WriteBack(freeSec);
 	
 	// create directory
-	Directory *newDirectory = new Directory(NumDirEntries, freeSec, currentDir->GetTable[currentDirectory].sector);
+	
+; 
+ Directory *newDirectory = new Directory(NumDirEntries, freeSec,currentSec);
 	OpenFile *newDirectoryFile = new OpenFile(freeSec);
 	
 	//save in hard disk
@@ -288,7 +290,7 @@ FileSystem::Open(char *name)
 
     DEBUG('f', "Opening file %s\n", name);
     directory->FetchFrom(directoryFile);
-    sector = directory->Find(name); 
+    sector = directory->FindSectorWithName(name); 
     if (sector >= 0) 		
 		openFile = new OpenFile(sector);	// name was found in directory 
     delete directory;
@@ -319,7 +321,7 @@ FileSystem::Remove(char *name)
     
     directory = new Directory(NumDirEntries);
     directory->FetchFrom(directoryFile);
-    sector = directory->Find(name);
+    sector = directory->FindSectorWithName(name);
     if (sector == -1) {
        delete directory;
        return FALSE;			 // file not found 
@@ -355,13 +357,15 @@ void FileSystem::ListAll()
 void FileSystem::ListName(char * name)
 {
 	//TODO
+  ;
 }
 
-Directory *GetCurrentDirectory()
+Directory *FileSystem::GetCurrentDirectory()
 {
+  
 	Directory *dir = new Directory(NumDirEntries);
-	dir->FetchFrom(directoryFile);
-	return directory; 
+	dir->FetchFrom(this->directoryFile);
+	return dir; 
 }
 
 //----------------------------------------------------------------------

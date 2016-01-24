@@ -44,7 +44,7 @@ bool FileHeader::Allocate(BitMap *freeMap, int fileSize)
 	{
 		dataSectors[i] = freeMap->Find();
 		indirectList = new int[IndirectNumber];
-		for(j = 0; j < (int)IndirectNumber && allocatedSector < numSectors; j++)
+		for(j = 0; (j < (int)IndirectNumber) && allocatedSector < numSectors; j++)
 		{
 			indirectList[j] = freeMap->Find();
 			allocatedSector++;
@@ -58,7 +58,7 @@ bool FileHeader::Allocate(BitMap *freeMap, int fileSize)
 
 void FileHeader::Deallocate(BitMap *freeMap)
 {
-    int i,j, desalocatedSector = 0;
+    int i,j, desallocatedSector = 0;
     int *indirectList;
     for(i = 0; i < (int)NumDirect && desallocatedSector < numSectors; i++)
 	{
@@ -103,12 +103,12 @@ FileHeader::WriteBack(int sector)
 int FileHeader::ByteToSector(int offset)
 {
 	int sectorOfByte = offset / SectorSize;
-	int placeInData = sector / IndirectNumber;
-	int indirectListPosition = sector % IndirectNumber;
+	int placeInData = sectorOfByte / IndirectNumber;
+	int indirectListPosition = sectorOfByte % IndirectNumber;
 	int *indirectList = new int[IndirectNumber];
 	
 	synchDisk->ReadSector(dataSectors[placeInData], (char *)indirectList);
-    return indirectList[indirectListPositon];
+    return indirectList[indirectListPosition];
 }
 
 int FileHeader::FileLength()
