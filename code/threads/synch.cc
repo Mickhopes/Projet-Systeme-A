@@ -103,38 +103,87 @@ Semaphore::V ()
 // the test case in the network assignment won't work!
 Lock::Lock (const char *debugName)
 {
+    name = debugName;
+    mutex = new Semaphore(debugName, 1);
+    holdingThread = NULL;
 }
 
 Lock::~Lock ()
 {
+    delete mutex;
 }
+
 void
 Lock::Acquire ()
 {
+    mutex->P();
+    holdingThread = currentThread;
 }
+
 void
 Lock::Release ()
 {
+    holdingThread = NULL;
+    mutex->V();
 }
+
+bool
+Lock::isHeldByCurrentThread() {
+    if (holdingThread == currentThread) {
+        return true;
+    }
+    return false;
+} 
 
 Condition::Condition (const char *debugName)
 {
+    name = debugName;
+    list = new List();
 }
 
 Condition::~Condition ()
 {
+    delete list;
 }
+
 void
 Condition::Wait (Lock * conditionLock)
 {
-    ASSERT (FALSE);
+    // We assure that the current thread is holding the lock
+    ASSERT (conditionLock->isHeldByCurrentThread());
+
+    // We create a new Semaphore that we add in the list
+    Semaphore *s = new Semaphore("Wait", 0);
+    list->Append(s);
+
+    // Then we release the lock before calling P
+    conditionLock->Release();
+    s->P();
+    conditionLock->Acquire();
+
+    delete s;
 }
 
 void
 Condition::Signal (Lock * conditionLock)
 {
+    // We assure that the current thread is holding the lock
+    ASSERT (conditionLock->isHeldByCurrentThread());
+
+    if (!list->IsEmpty()) {
+        Semaphore *s = (Semaphore*)list->Remove();
+        s->V();
+    }
 }
+
 void
 Condition::Broadcast (Lock * conditionLock)
 {
+    // We assure that the current thread is holding the lock
+    ASSERT (conditionLock->isHeldByCurrentThread());
+
+    while(!list->IsEmpty()) {
+        Semaphore *s = (Semaphore*)list->Remove();
+        s->V();
+    }
 }

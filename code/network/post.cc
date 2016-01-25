@@ -18,8 +18,15 @@
 
 #include "copyright.h"
 #include "post.h"
+#include "system.h"
 
 #include <strings.h> /* for bzero */
+
+MailHeader::MailHeader()
+{
+    last = 1;
+    sequence = 0;
+}
 
 //----------------------------------------------------------------------
 // Mail::Mail
@@ -122,8 +129,20 @@ void
 MailBox::Get(PacketHeader *pktHdr, MailHeader *mailHdr, char *data) 
 { 
     DEBUG('n', "Waiting for mail in mailbox\n");
-    Mail *mail = (Mail *) messages->Remove();	// remove message from list;
+
+	char buffer[MAXBUFFERSIZE] = {'\0'};
+	unsigned int lenBuffer = 0;
+	
+	Mail *mail = (Mail *) messages->Remove();	// remove message from list;
 						// will wait if list is empty
+	strncat(buffer, mail->data, mail->mailHdr.length);
+	lenBuffer += mail->mailHdr.length;	
+
+	while (!mail->mailHdr.last) {
+		mail = (Mail *) messages->Remove();
+		strncat(buffer, mail->data, mail->mailHdr.length);
+		lenBuffer += mail->mailHdr.length;
+	}
 
     *pktHdr = mail->pktHdr;
     *mailHdr = mail->mailHdr;
@@ -131,7 +150,7 @@ MailBox::Get(PacketHeader *pktHdr, MailHeader *mailHdr, char *data)
 	printf("Got mail from mailbox: ");
 	PrintHeader(*pktHdr, *mailHdr);
     }
-    bcopy(mail->data, data, mail->mailHdr.length);
+    bcopy(buffer, data, lenBuffer);
 					// copy the message data into
 					// the caller's buffer
     delete mail;			// we've copied out the stuff we
@@ -179,11 +198,26 @@ PostOffice::PostOffice(NetworkAddress addr, double reliability, int nBoxes)
     messageAvailable = new Semaphore("message available", 0);
     messageSent = new Semaphore("message sent", 0);
     sendLock = new Lock("message send lock");
+    ackLock = new Lock("ack table lock");
 
 // Second, initialize the mailboxes
     netAddr = addr; 
     numBoxes = nBoxes;
     boxes = new MailBox[nBoxes];
+    ackTable = new unsigned int*[nBoxes];
+    ackNumber = new unsigned int[nBoxes];
+    ackSem = new Semaphore*[nBoxes];
+
+    for(int i = 0; i < nBoxes; i++) {
+        ackTable[i] = new unsigned int[NbAckTable];
+
+        for(int j = 0; j < NbAckTable; j++) {
+            ackTable[i][j] = 0;
+        }
+
+        ackNumber[i] = 0;
+        ackSem[i] = new Semaphore("Semaphore of boxes", NbAckTable);
+    }
 
 // Third, initialize the network; tell it which interrupt handlers to call
     network = new Network(addr, reliability, ReadAvail, WriteDone, (int) this);
@@ -204,9 +238,17 @@ PostOffice::PostOffice(NetworkAddress addr, double reliability, int nBoxes)
 PostOffice::~PostOffice()
 {
     delete network;
+    delete [] ackNumber;
+    for(int i = 0; i < numBoxes; i++) {
+        delete [] ackTable[i];
+        delete ackSem[i];
+    }
+    delete [] ackTable;
+    delete [] ackSem;
     delete [] boxes;
     delete messageAvailable;
     delete messageSent;
+    delete ackLock;
     delete sendLock;
 }
 
@@ -222,27 +264,47 @@ void
 PostOffice::PostalDelivery()
 {
     PacketHeader pktHdr;
-    MailHeader mailHdr;
+    MailHeader mailHdr, oldMail;
+    oldMail.ack = 9999;
+    oldMail.from = 9999;
+    
     char *buffer = new char[MaxPacketSize];
 
+    //DEBUG('r', "PostalDelivery commence\n");
     for (;;) {
         // first, wait for a message
-        messageAvailable->P();	
+        messageAvailable->P();
         pktHdr = network->Receive(buffer);
 
         mailHdr = *(MailHeader *)buffer;
         if (DebugIsEnabled('n')) {
-	    printf("Putting mail into mailbox: ");
-	    PrintHeader(pktHdr, mailHdr);
+	       printf("Putting mail into mailbox: ");
+	       PrintHeader(pktHdr, mailHdr);
         }
 
-	// check that arriving message is legal!
-	ASSERT(0 <= mailHdr.to && mailHdr.to < numBoxes);
-	ASSERT(mailHdr.length <= MaxMailSize);
+    	// check that arriving message is legal!
+    	ASSERT(0 <= mailHdr.to && mailHdr.to < numBoxes);
+    	ASSERT(mailHdr.length <= MaxMailSize);
 
-	// put into mailbox
-        boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeader));
+        DEBUG('r', "PostalDelivery : %d a recu un message : mailHdr.isAck = %d\n", netAddr, mailHdr.isAck);
+        if (mailHdr.isAck) {
+            DEBUG('r', "Postal delivery a detecté un ACK a destination de %d par %d\n", netAddr, mailHdr.ack);
+            ackLock->Acquire();
+            ackTable[mailHdr.to][mailHdr.ack % NbAckTable] = 2;
+            ackLock->Release();
+        } else {
+            if (!(oldMail.from == mailHdr.from && oldMail.ack == mailHdr.ack)) {
+                oldMail = mailHdr;
+                //DEBUG('w',"mailHdr.last = %d\n",mailHdr.last);
+				
+              	boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeader));
+                DEBUG('r', "PostalDelivery : %d envoie un ack num %d à %d sur la boite %d\n", netAddr, mailHdr.ack, pktHdr.from, mailHdr.from);
+            }
+
+            SendAck(pktHdr, mailHdr);
+        }
     }
+    //DEBUG('r', "PostalDelivery fini\n");
 }
 
 //----------------------------------------------------------------------
@@ -268,6 +330,7 @@ PostOffice::Send(PacketHeader pktHdr, MailHeader mailHdr, const char* data)
 	printf("Post send: ");
 	PrintHeader(pktHdr, mailHdr);
     }
+    DEBUG('r', "mailHdr.length =  %d et MaxMailSize = %d\n",mailHdr.length,MaxMailSize);
     ASSERT(mailHdr.length <= MaxMailSize);
     ASSERT(0 <= mailHdr.to && mailHdr.to < numBoxes);
     
@@ -281,6 +344,11 @@ PostOffice::Send(PacketHeader pktHdr, MailHeader mailHdr, const char* data)
 
     sendLock->Acquire();   		// only one message can be sent
 					// to the network at any one time
+    DEBUG('r', "Send : pktHdr.to = %d\n", pktHdr.to);
+    DEBUG('r', "Send : mailHdr.to = %d\n", mailHdr.to);
+    DEBUG('r', "Send : mailHdr.from = %d\n", mailHdr.from);
+    DEBUG('r', "Send : data = [%s]\n", data);
+    DEBUG('r', "Send : isAck = %d\n", mailHdr.isAck);
     network->Send(pktHdr, buffer);
     messageSent->P();			// wait for interrupt to tell us
 					// ok to send the next message
@@ -291,7 +359,126 @@ PostOffice::Send(PacketHeader pktHdr, MailHeader mailHdr, const char* data)
 }
 
 //----------------------------------------------------------------------
-// PostOffice::Send
+// PostOffice::SendReliable
+//  Send the packet using Send() and then wait for an ack answer.
+//  If the ack has not been received, it re-send the packet.
+//  The packet is reemitted a predefined number of times.
+//----------------------------------------------------------------------
+
+void
+PostOffice::SendReliable(PacketHeader pktHdr, MailHeader mailHdr, const char* data)
+{
+    // We wait for a place in our reception box
+    ackSem[mailHdr.from]->P();
+
+    // We set the ack index that we will wait in the ackTable
+    mailHdr.isAck = 0;
+    FindAck(&mailHdr);
+    DEBUG('r', "Pour %d, FdindAck a trouvé un num dispo : %d\n", netAddr, mailHdr.ack);
+
+    // We resend until we receive the ack
+    int i;
+    for(i = 0; i < MAXREEMISSIONS; i++) {
+        // We send the packet
+        DEBUG('r', "%d envoie un paquet à %d tentative %d\n", netAddr, pktHdr.to, i+1);
+        Send(pktHdr, mailHdr, data);
+
+        // We wait a certain amount of time, see TEMPO
+        currentThread->Sleep(TEMPO);
+
+        // Then we check if the ack has arrived
+        ackLock->Acquire();
+        if (ackTable[mailHdr.from][mailHdr.ack] == 2) {
+            DEBUG('r', "%d a recu un Ack car la case est a 2\n", netAddr);
+            ackLock->Release();
+            break;
+        }
+        ackLock->Release();
+    }
+
+    if (i == MAXREEMISSIONS)
+        DEBUG('r', "Envoi impossible du message de %d à %d\n", netAddr, pktHdr.to);
+
+    // Then we reset our entry in the ackTable
+    ackLock->Acquire();
+    ackTable[mailHdr.from][mailHdr.ack] = 0;
+    ackSem[mailHdr.from]->V();
+    ackLock->Release();
+}
+
+//----------------------------------------------------------------------
+// PostOffice::SendAck
+//  Send an ack to the machine which sent us a packet
+//----------------------------------------------------------------------
+
+void
+PostOffice::SendAck(PacketHeader pktHdr, MailHeader mailHdr)
+{
+    PacketHeader outPktHdr;
+    MailHeader outMailHdr;
+    const char *data = "ack";
+
+    outPktHdr.to = pktHdr.from;
+    DEBUG('r', "SendAck : outPktHdr.to = %d\n", outPktHdr.to);
+    outMailHdr.to = mailHdr.from;
+    DEBUG('r', "SendAck : outMailHdr.to = %d\n", outMailHdr.to);
+    outMailHdr.from = 0; // This instruction is useless since we don't respond to an ack
+    outMailHdr.length = strlen(data) + 1;
+    outMailHdr.isAck = 1;
+    DEBUG('r', "SendAck : outMailHdr.isAck = %d\n", outMailHdr.isAck);
+    outMailHdr.ack = mailHdr.ack;
+    outMailHdr.last = 1;
+
+    DEBUG('r', "%d tente d'envoyer un ack a %d sur la boite %d avec un ack de %d\n", netAddr, outPktHdr.to, outMailHdr.to, outMailHdr.ack);
+
+    Send(outPktHdr, outMailHdr, data);
+
+    DEBUG('r', "%d Sortie de SendAck\n", netAddr);
+}
+
+//----------------------------------------------------------------------
+// PostOffice::SendPieces
+//  Send a packet with a variable size
+//----------------------------------------------------------------------
+
+void 
+PostOffice::SendPieces(PacketHeader pktHdr, MailHeader mailHdr, const char *data)
+{
+    unsigned int size_data = strlen(data);
+
+    char buff[MaxMailSize+1];
+	buff[MaxMailSize] = '\0'; 
+    DEBUG('r', "SendPieces : strlen(buff) = %d\n",strlen(buff));
+
+    int i = 0;
+    while(size_data > MaxMailSize) {
+		memset(buff, '\0', MaxMailSize);
+        strncpy(buff, data+i*MaxMailSize, MaxMailSize);
+        size_data -= MaxMailSize;
+        mailHdr.last = 0;
+        if (size_data == 0){
+            mailHdr.last = 1;
+        }
+        mailHdr.length = strlen(buff);
+        DEBUG('r', "SendPieces : mailHdr.length = %d car buff= [%s]\n",mailHdr.length,buff);
+        mailHdr.sequence = i;
+        SendReliable(pktHdr, mailHdr, buff);
+
+        i++;
+    }
+
+    if (size_data > 0) {
+        memset (buff, '\0', MaxMailSize);
+        strncpy(buff, data+i*MaxMailSize, size_data);
+        mailHdr.last = 1;
+        mailHdr.length = strlen(buff);	
+        mailHdr.sequence = i;
+        SendReliable(pktHdr, mailHdr, buff);
+    }
+}
+
+//----------------------------------------------------------------------
+// PostOffice::Receive
 // 	Retrieve a message from a specific box if one is available, 
 //	otherwise wait for a message to arrive in the box.
 //
@@ -306,8 +493,7 @@ PostOffice::Send(PacketHeader pktHdr, MailHeader mailHdr, const char* data)
 //----------------------------------------------------------------------
 
 void
-PostOffice::Receive(int box, PacketHeader *pktHdr, 
-				MailHeader *mailHdr, char* data)
+PostOffice::Receive(int box, PacketHeader *pktHdr, MailHeader *mailHdr, char* data)
 {
     ASSERT((box >= 0) && (box < numBoxes));
 
@@ -344,3 +530,33 @@ PostOffice::PacketSent()
     messageSent->V();
 }
 
+//----------------------------------------------------------------------
+// PostOffice::GetNetworkAddress
+//  Return the network address of the current machine
+//----------------------------------------------------------------------
+
+NetworkAddress
+PostOffice::GetNetworkAddress()
+{ 
+    return netAddr;
+}
+
+//----------------------------------------------------------------------
+// PostOffice::FindAck
+//  Interrupt handler, called when a packet arrives from the network.
+//
+//  Signal the PostalDelivery routine that it is time to get to work!
+//----------------------------------------------------------------------
+
+void
+PostOffice::FindAck(MailHeader* mailHdr)
+{
+    ackLock->Acquire();
+    while(ackTable[mailHdr->from][ackNumber[mailHdr->from] % NbAckTable] != 0) {
+        ackNumber[mailHdr->from]++;
+    }
+    mailHdr->ack = ackNumber[mailHdr->from]++;
+    ackTable[mailHdr->from][mailHdr->ack % NbAckTable] = 1;
+
+    ackLock->Release();
+}

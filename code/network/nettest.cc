@@ -35,37 +35,107 @@ MailTest(int farAddr)
 {
     PacketHeader outPktHdr, inPktHdr;
     MailHeader outMailHdr, inMailHdr;
-    const char *data = "Hello there!";
-    const char *ack = "Got it!";
-    char buffer[MaxMailSize];
+    //const char *data = "Hello there!";
+    const char *data = "012345678910111213141516171819202122232425262728293031323334353637383940";
+    char buffer[MAXBUFFERSIZE];
+    int i = 0;
+    while(i < 10) {
+        // construct packet, mail header for original message
+        // To: destination machine, mailbox 0
+        // From: our machine, reply to: mailbox 1
+        outPktHdr.to = farAddr;     
+        outMailHdr.to = 0;
+        outMailHdr.from = 1;
+        //outMailHdr.length = strlen(data);
+        
+        // Send the first message
+        postOffice->SendPieces(outPktHdr, outMailHdr, data); 
+
+        // Wait for the first message from the other machine
+        memset (buffer, '\0', MAXBUFFERSIZE);
+        postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
+        printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
+        fflush(stdout);
+        i++;
+    }
 
     // construct packet, mail header for original message
     // To: destination machine, mailbox 0
     // From: our machine, reply to: mailbox 1
-    outPktHdr.to = farAddr;		
+    /*outPktHdr.to = farAddr;     
     outMailHdr.to = 0;
     outMailHdr.from = 1;
-    outMailHdr.length = strlen(data) + 1;
-
+    outMailHdr.length = strlen(data);
+    
     // Send the first message
-    postOffice->Send(outPktHdr, outMailHdr, data); 
+    postOffice->SendPieces(outPktHdr, outMailHdr, data); 
 
+    memset(buffer, '\0', MaxMailSize*sizeof(char));
     // Wait for the first message from the other machine
     postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
-    printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.from);
+    printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
     fflush(stdout);
 
-    // Send acknowledgement to the other machine (using "reply to" mailbox
-    // in the message that just arrived
-    outPktHdr.to = inPktHdr.from;
-    outMailHdr.to = inMailHdr.from;
-    outMailHdr.length = strlen(ack) + 1;
-    postOffice->Send(outPktHdr, outMailHdr, ack); 
-
-    // Wait for the ack from the other machine to the first message we sent.
-    postOffice->Receive(1, &inPktHdr, &inMailHdr, buffer);
-    printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.from);
+    memset(buffer, '\0', MaxMailSize*sizeof(char));
+    // Wait for the first message from the other machine
+    postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
+    printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
     fflush(stdout);
+
+    memset(buffer, '\0', MaxMailSize*sizeof(char));
+    // Wait for the first message from the other machine
+    postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
+    printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
+    fflush(stdout);*/
+
+    currentThread->Sleep(10000000);
+
+    // Then we're done!
+    interrupt->Halt();
+}
+
+void
+RingTest(int numMachines)
+{
+    PacketHeader outPktHdr, inPktHdr;
+    MailHeader outMailHdr, inMailHdr;
+    const char *data = "Token!";
+    char buffer[MaxMailSize];
+
+    if (postOffice->GetNetworkAddress() == 0) {
+        // The first machine will send it's token to the second one
+        outPktHdr.to = 1;
+        outMailHdr.to = 0;
+        outMailHdr.from = 1;
+        outMailHdr.length = strlen(data) + 1;
+
+        // We send it
+        postOffice->SendReliable(outPktHdr, outMailHdr, data);
+
+        // Wait for last machine to send the token
+        postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
+        printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
+        fflush(stdout);
+    } else {
+        // Wait for previous machine to send the token
+        postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
+        printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
+        fflush(stdout);
+
+        // We keep the token 2 seconds
+        Delay(2);
+
+        outPktHdr.to = postOffice->GetNetworkAddress() == numMachines-1 ? 0 : postOffice->GetNetworkAddress()+1;
+        DEBUG('r', "Machine %d doit envoyer a %d\n", postOffice->GetNetworkAddress(), outPktHdr.to);
+        outMailHdr.to = 0;
+        outMailHdr.from = 1;
+        outMailHdr.length = strlen(buffer) + 1;
+
+        // We send it
+        postOffice->SendReliable(outPktHdr, outMailHdr, buffer);
+    }
+
+    currentThread->Sleep(100000000);
 
     // Then we're done!
     interrupt->Halt();

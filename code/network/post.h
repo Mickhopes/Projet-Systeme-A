@@ -31,6 +31,13 @@
 #include "network.h"
 #include "synchlist.h"
 
+#define NbAckTable 1000
+
+#define TEMPO 100000
+#define MAXREEMISSIONS 15
+
+#define MAXBUFFERSIZE 1000
+
 // Mailbox address -- uniquely identifies a mailbox on a given machine.
 // A mailbox is just a place for temporary storage for messages.
 typedef int MailBoxAddress;
@@ -41,10 +48,17 @@ typedef int MailBoxAddress;
 
 class MailHeader {
   public:
+    MailHeader();
+
     MailBoxAddress to;		// Destination mail box
     MailBoxAddress from;	// Mail box to reply to
     unsigned length;		// Bytes of message data (excluding the 
 				// mail header)
+
+    int isAck;
+    unsigned int ack;
+    unsigned int last;
+    unsigned int sequence;
 };
 
 // Maximum "payload" -- real data -- that can included in a single message
@@ -111,9 +125,14 @@ class PostOffice {
     				// Send a message to a mailbox on a remote 
 				// machine.  The fromBox in the MailHeader is 
 				// the return box for ack's.
+
+    void SendReliable(PacketHeader pktHdr, MailHeader mailHdr, const char *data);
+
+    void SendAck(PacketHeader pktHdr, MailHeader mailHdr);
+
+    void SendPieces(PacketHeader pktHdr, MailHeader mailHdr, const char *data);
     
-    void Receive(int box, PacketHeader *pktHdr, 
-		MailHeader *mailHdr, char *data);
+    void Receive(int box, PacketHeader *pktHdr, MailHeader *mailHdr, char *data);
     				// Retrieve a message from "box".  Wait if
 				// there is no message in the box.
 
@@ -128,6 +147,11 @@ class PostOffice {
 				// off of network (i.e., time to call 
 				// PostalDelivery)
 
+    // Return the network address of the current machine
+    NetworkAddress GetNetworkAddress();
+
+    void FindAck(MailHeader* mailHdr);
+
   private:
     Network *network;		// Physical network connection
     NetworkAddress netAddr;	// Network address of this machine
@@ -136,6 +160,11 @@ class PostOffice {
     Semaphore *messageAvailable;// V'ed when message has arrived from network
     Semaphore *messageSent;	// V'ed when next message can be sent to network
     Lock *sendLock;		// Only one outgoing message at a time
+
+    Lock *ackLock;
+    unsigned int **ackTable;
+    unsigned int *ackNumber;
+    Semaphore **ackSem;
 };
 
 #endif

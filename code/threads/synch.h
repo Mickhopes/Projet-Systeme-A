@@ -37,6 +37,7 @@
 // now be different.
 
 class AddrSpace;
+class Thread;
 
 class Semaphore
 {
@@ -90,6 +91,9 @@ class Lock
   private:
     const char *name;		// for debugging
     // plus some other stuff you'll need to define
+    Semaphore *mutex;
+    Thread *holdingThread;
+
 };
 
 // The following class defines a "condition variable".  A condition
@@ -146,5 +150,6 @@ class Condition
   private:
     const char *name;
     // plus some other stuff you'll need to define
+    List *list; // list that we will use as a queue
 };
 #endif // SYNCH_H
