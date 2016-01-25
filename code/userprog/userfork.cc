@@ -22,17 +22,22 @@ do_ForkExec (char *filename)
 {
 	if(filename == NULL)
 	{
-		printf("no filename");
+		//printf("no filename");
 		currentThread->errorno = EINEX;
 		return -1;
 	}
-	
+
+	if (nbProc == MaxForkExec) {
+		currentThread->errorno = EMAXPROC;
+		return -1;
+	}
+
     OpenFile *executable = fileSystem->Open (filename);
     AddrSpace *space;
 
     if (executable == NULL)
     {
-	  printf ("Unable to open file %s\n", filename);
+	  //printf ("Unable to open file %s\n", filename);
 	  currentThread->errorno = EINEX;
       currentThread->space->semWait->V();
 	  return -1;

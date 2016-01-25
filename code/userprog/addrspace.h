@@ -23,6 +23,7 @@
 #define NbPageHeap 10 // Number of pages for dynamic allocation
 
 #define MaxUserThreads 12
+#define MaxForkExec 12
 
 #define UserStackSize (MaxUserThreads*PageSize*NbPageUserThread + 2*PageSize)  // increase this as necessary!
 #define UserHeapSize NbPageHeap*PageSize
