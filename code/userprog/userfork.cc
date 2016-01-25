@@ -23,24 +23,17 @@ do_ForkExec (char *filename)
 	if(filename == NULL)
 	{
 		printf("no filename");
-		errorno = EINEX;
+		currentThread->errorno = EINEX;
 		return -1;
 	}
-	else if(strcmp(filename, "quit") == 0 || strcmp(filename, "exit") == 0)
-	{
-		//TODO change code if autorise background process
-		DEBUG('w', "azertyuiopjhgfdfghjkjhgfdjkghkhqkjeshfkhefkhzemihfQP\n");
-		//currentThread->Finish ();	
-		interrupt->Halt();
-		return 0;
-	}
+	
     OpenFile *executable = fileSystem->Open (filename);
     AddrSpace *space;
 
     if (executable == NULL)
     {
 	  printf ("Unable to open file %s\n", filename);
-	  errorno = EINEX;
+	  currentThread->errorno = EINEX;
       currentThread->space->semWait->V();
 	  return -1;
     }

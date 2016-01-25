@@ -42,10 +42,10 @@ int do_UserThreadCreate(int f, int arg, int fReturn) {
 		DEBUG ('z', "Creation thread impossible\n");
 		if (address == -1) {
 			// Because there is too much threads
-			errorno = EMAXTHREADS;
+			currentThread->errorno = EMAXTHREADS;
 		} else {
 			// Because there is not enough space left
-			errorno = ESPACE;
+			currentThread->errorno = ESPACE;
 		}
 		return -1;
 	}
@@ -95,13 +95,13 @@ int do_UserThreadJoin(unsigned int threadId){
 	if ((ret = currentThread->space->IsJoinableUserThread(threadId, currentThread->tid)) < 0) {
 		switch(ret) {
 			case -1:
-				errorno = ESRCH;
+				currentThread->errorno = ESRCH;
 				break;
 			case -2:
-				errorno = EINVAL;
+				currentThread->errorno = EINVAL;
 				break;
 			case -3:
-				errorno = EDEADLK;
+				currentThread->errorno = EDEADLK;
 				break;
 		}
 		return -1;

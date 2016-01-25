@@ -155,6 +155,7 @@ class Thread
     int ppid;      // Father process ID
     unsigned int idSpace;   // User thread's space ID, used in address space.
     Semaphore *semJoin;         // Semaphore used for join
+    unsigned int errorno; // error number
 
     static unsigned int numThreads;
     static unsigned int numProc;

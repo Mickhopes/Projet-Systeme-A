@@ -184,7 +184,7 @@ ExceptionHandler(ExceptionType which)
 				break;
 			}
 			case SC_GetErrorNo: {
-				machine->WriteRegister(2, errorno);
+				machine->WriteRegister(2, currentThread->errorno);
 				break;
 			}
 			case SC_InitSemaphore: {
