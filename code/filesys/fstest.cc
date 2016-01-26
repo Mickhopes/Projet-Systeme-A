@@ -309,8 +309,14 @@ void Copy(const char *from, const char *to) {
 		int i;
 		for(i =0; i< npath - 1; i++)
 		{
-			DEBUG('j',"%s\n",paths[i]);
-			strcat(dirName, paths[i]);
+			if(i == 0)
+				strcpy(dirName, paths[i]);
+			else
+			{
+				strcat(dirName, (char *)"/");
+				strcat(dirName, paths[i]);
+			}
+			DEBUG('j',"%s : %s\n",paths[i], dirName);
 		}
 		char *curName = directory->GetDirName();
 		fileSystem->ChangeDir(dirName);

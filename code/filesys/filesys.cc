@@ -251,7 +251,14 @@ FileSystem::Create(const char *name, int initialSize)
 		int i;
 		for(i =0; i< npath - 1; i++)
 		{
-			strcat(dirName, paths[i]);
+			if(i == 0)
+				strcpy(dirName, paths[i]);
+			else
+			{
+				strcat(dirName, (char *)"/");
+				strcat(dirName, paths[i]);
+			}
+			DEBUG('j',"%s : %s\n",paths[i], dirName);
 		}
 		ChangeDir(dirName);
 		char *curName = directory->GetDirName();
@@ -475,19 +482,27 @@ void FileSystem::List(char * name)
     if (this->MoveToLastDir(name) != -1) 
     {
         int sector = this->CurrentDir()->Find(name);
-        OpenFile * remoteFile = new OpenFile(sector);
-        // Si c'est un dossier on liste son contenu
-        if (remoteFile->isDirectoryFile()) 
+        if(sector != -1)
         {
-            this->MoveToDir(name);
-            this->List();
-        } else 
-        {
-            // On affiche son nom si c'est fichier
+		    
+		    OpenFile * remoteFile = new OpenFile(sector);
+		    // Si c'est un dossier on liste son contenu
+		    if (remoteFile->isDirectoryFile()) 
+		    {
+		        this->MoveToDir(name);
+		        this->List();
+		    } else 
+		    {
+		        // On affiche son nom si c'est fichier
 
-            printf("Name : %s\tLength : %d Bytes\n", name, remoteFile->Length());
-        }
-        this->MoveToSector(currentSector);
+		        printf("Name : %s\tLength : %d Bytes\n", name, remoteFile->Length());
+		    }
+	    }
+	    else
+	    {
+	    	printf("directory or file %s isn't exist", name);
+	    }
+	   	this->MoveToSector(currentSector);
     }
 }
 
