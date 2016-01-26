@@ -157,7 +157,6 @@ Directory::Add(const char *name, int newSector)
 {
     if (FindIndex(name) != -1)
     {
-    	errorno = ENAMEEXIST;
     	return FALSE;
     }
 
@@ -187,7 +186,6 @@ bool Directory::Remove(const char *name)
 
     if (i == -1)
     {
-    	errorno = ENAMENOTEXIST;
         return FALSE;         // name not in directory
     }
     table[i].inUse = FALSE;

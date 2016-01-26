@@ -10,13 +10,5 @@
 #define EMAXPROC 7		// Too much process running at a time
 #define EMAXSEM 8		// Too much semaphore
 #define ESEMINVAL 9 	// Semaphore not found
-#define ENMETOOLONG 10	//the name of the file or directory is too long
-#define ENAMEEXIST 11	//file or directory exist in current directory
-#define EWTYPE 12		//the type of target is wrong(directory/File...)
-#define ENAMENOTEXIST 13	//directory or file does not exist in current directory
-#define EDIRNOTEMPTY 14	//directory isn't empty
-#define EDIRFULL	15	//directory is full 
-#define EHARDDISKFULL 16	//this error is raise if a hard disk havan't enough free blocks
-#define EPATHNOTFIND 17	// the path name isn't exist
 
 #endif /* ERRORNO_H */

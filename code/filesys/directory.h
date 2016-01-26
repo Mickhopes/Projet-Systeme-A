@@ -18,7 +18,6 @@
 #define DIRECTORY_H
 
 #include "openfile.h"
-#include "errorno.h"
 
 #define FileNameMaxLen     9  // for simplicity, we assume
           // file names are <= 9 characters long

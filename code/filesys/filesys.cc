@@ -310,7 +310,6 @@ int FileSystem::CreateDir(char *name)
         
     if (strcmp(name, "\0") == 0) 
     {
-        errorno = ENAMEEXIST;
         return -1;
     }
 
@@ -318,19 +317,16 @@ int FileSystem::CreateDir(char *name)
 
     if(strlen(name) > FileNameMaxLen) 
     {
-        errorno = ENMETOOLONG;
         error = true;
     }
 
     if (!error && currentDir->Find(name) != -1) 
     {
-       errorno = ENAMEEXIST;
        error = true;
     }
 
     if (!error && currentDir->DirectoryisFull()) 
     {
-        errorno = EDIRFULL;
         error = true;
     }
 
@@ -342,7 +338,6 @@ int FileSystem::CreateDir(char *name)
         freeSector = freeMap->Find();
         if (freeSector == -1) 
         {
-            errorno = EHARDDISKFULL;
             error = true;
         }
     }

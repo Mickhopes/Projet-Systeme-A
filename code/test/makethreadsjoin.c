@@ -13,7 +13,7 @@ void attendre(void* arg) {
 		int error = GetErrorNo();
 		if (error == ESRCH) {
 			PutString("Thread introuvable\n");
-		} else if (error == EDEADLCK) {
+		} else if (error == EDEADLK) {
 			PutString("Deadlock detecte\n");
 		}
 	}
