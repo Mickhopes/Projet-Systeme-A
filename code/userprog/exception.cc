@@ -29,6 +29,7 @@
 #include "synch.h"
 #include "errorno.h"
 #include "addrspace.h"
+#include "userfile.h"
 
 //----------------------------------------------------------------------
 // UpdatePC : Increments the Program Counter register in order to resume
@@ -272,9 +273,38 @@ ExceptionHandler(ExceptionType which)
 				machine->WriteRegister(2, do_Wait());
 				break;
 			}
+			/*
+			case SC_Create: {
+				DEBUG ('z', "do_Create\n");
+				machine->WriteRegister(2, do_Create((char*)machine->ReadRegister(4)));
+				break;
+			}
+			
+			case SC_Open: {
+				DEBUG ('z', "do_Open\n");
+				machine->WriteRegister(2, do_Open((char*)machine->ReadRegister(4)));
+				break;
+			}
+			case SC_Read: {
+				DEBUG ('z', "do_Read\n");
+				machine->WriteRegister(2, do_Read((char*)machine->ReadRegister(4), machine->ReadRegister(5), machine->ReadRegister(6)));
+				break;
+			}
+			case SC_Write: {
+				DEBUG ('z', "do_Write\n");
+				machine->WriteRegister(2, do_Write((char*)machine->ReadRegister(4), machine->ReadRegister(5), machine->ReadRegister(6));
+				break;
+			}
+			case SC_Close: {
+				DEBUG ('z', "do_Close\n");
+				machine->WriteRegister(2, do_Close((char*)machine->ReadRegister(4)));
+				break;
+			}
+			*/
+			
 			default: {
 				printf("Unexpected user mode exception %d %d\n", which, type);
-				ASSERT(FALSE);
+				ASSERT(false);
 			}
 		}
 		UpdatePC();

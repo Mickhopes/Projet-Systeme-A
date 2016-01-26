@@ -33,6 +33,7 @@
 //    -l lists the contents of the Nachos directory
 //    -D prints the contents of the entire file system 
 //    -t tests the performance of the Nachos file system
+//		-s runs shell for filesys
 //
 //  NETWORK
 //    -n sets the network reliability
@@ -55,6 +56,7 @@
 #include "system.h"
 
 
+
 // External functions used by this file
 
 extern void ThreadTest (void), Copy (const char *unixFile, const char *nachosFile);
@@ -62,6 +64,7 @@ extern void Print (char *file), PerformanceTest (void);
 extern void StartProcess (char *file), ConsoleTest (char *in, char *out), SynchConsoleTest (char *in, char *out);
 extern void MailTest (int networkID);
 extern void RingTest (int numMachines);
+extern void ShellFileSys();
 
 //----------------------------------------------------------------------
 // main
@@ -144,7 +147,7 @@ main (int argc, char **argv)
 	    }
 	  else if (!strcmp (*argv, "-l"))
 	    {			// list Nachos directory
-		fileSystem->List ();
+		fileSystem->List();
 	    }
 	  else if (!strcmp (*argv, "-D"))
 	    {			// print entire filesystem
@@ -154,6 +157,10 @@ main (int argc, char **argv)
 	    {			// performance test
 		PerformanceTest ();
 	    }
+	else if (!strcmp (*argv, "-s"))
+	    {			
+		ShellFileSys();
+	    }	   
 #endif // FILESYS
 #ifdef NETWORK
 	  if (!strcmp (*argv, "-o"))
