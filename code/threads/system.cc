@@ -197,6 +197,9 @@ Cleanup ()
 #endif
 
 #ifdef USER_PROGRAM
+    delete semNumProc;
+    delete semNumThread;
+    delete frameProvider;
 	delete synchconsole;
     delete machine;
 #endif

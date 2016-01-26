@@ -32,7 +32,7 @@ int do_UserThreadCreate(int f, int arg, int fReturn) {
 	sprintf(name, "user thread %d", tid);
 	name[13] = '\0';*/
 
-	Thread *newThread = new Thread("user thread", tid, -1, currentThread->pid);
+	Thread *newThread = new Thread("user thread", tid, currentThread->pid, currentThread->ppid);
 
 	newThread->space = currentThread->space;
 

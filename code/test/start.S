@@ -274,13 +274,13 @@ GetPPid:
 	j	$31
 	.end GetPPid
 
-	.globl Waitpid
-	.ent	Waitpid
-Waitpid:
-	addiu $2,$0,SC_Waitpid
+	.globl Wait
+	.ent	Wait
+Wait:
+	addiu $2,$0,SC_Wait
 	syscall
 	j	$31
-	.end Waitpid
+	.end Wait
 
 /* dummy function to keep gcc happy */
         .globl  __main

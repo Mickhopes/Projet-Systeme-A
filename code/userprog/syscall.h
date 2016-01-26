@@ -47,7 +47,7 @@
 #define SC_GetTid 26
 #define SC_GetPid 27
 #define SC_GetPPid 28
- #define SC_Waitpid 29
+#define SC_Wait 29
 
 #ifdef IN_USER_MODE
 
@@ -190,7 +190,7 @@ int GetPid();
 int GetPPid();
 
 /* Wait for the process number pid finish */
-int Waitpid();
+int Wait();
 
 /*-------------------------------------------
 	Semaphore for user's utilisation
@@ -200,11 +200,11 @@ typedef int sem_t;
 
 int InitSemaphore(char *name, int valueInit);
  
-void DestroySemaphore(sem_t s);
+int DestroySemaphore(sem_t s);
 
-void P(sem_t s);
+int P(sem_t s);
 
-void V(sem_t s);
+int V(sem_t s);
 
 
 #endif // IN_USER_MODE

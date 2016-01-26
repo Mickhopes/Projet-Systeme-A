@@ -66,3 +66,11 @@ do_ForkExec (char *filename)
 
     return newThread->pid;
 }
+
+int do_Wait(){
+  DEBUG ('z', "Wait par process %s\n",currentThread->pid);
+
+  currentThread->space->semWait->P();
+
+  return 0;
+}

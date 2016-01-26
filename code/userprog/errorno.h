@@ -8,5 +8,7 @@
 #define EMAXTHREADS 5	// Too much thread running at a time
 #define EINEX 6			// The executable file to be executed by a process does not exist
 #define EMAXPROC 7		// Too much process running at a time
+#define EMAXSEM 8		// Too much semaphore
+#define ESEMINVAL 9 	// Semaphore not found
 
 #endif /* ERRORNO_H */

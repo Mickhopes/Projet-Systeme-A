@@ -20,7 +20,7 @@ int main (){
         }
 
     	ForkExec(buffer);
-        Waitpid();
+        Wait();
         PutChar('\n');
     }
     return 0;

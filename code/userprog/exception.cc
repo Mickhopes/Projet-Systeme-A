@@ -30,8 +30,6 @@
 #include "errorno.h"
 #include "addrspace.h"
 
-unsigned int errorno;
-
 //----------------------------------------------------------------------
 // UpdatePC : Increments the Program Counter register in order to resume
 // the user program immediately after the "syscall" instruction.
@@ -70,27 +68,6 @@ UpdatePC ()
 //      "which" is the kind of exception.  The list of possible exceptions 
 //      are in machine.h.
 //----------------------------------------------------------------------
-
-/*void
-ExceptionHandler (ExceptionType which)
-{
-    int type = machine->ReadRegister (2);
-
-    if ((which == SyscallException) && (type == SC_Halt))
-      {
-	  DEBUG ('a', "Shutdown, initiated by user program.\n");
-	  interrupt->Halt ();
-      }
-    else
-      {
-	  printf ("Unexpected user mode exception %d %d\n", which, type);
-	  ASSERT (FALSE);
-      }
-
-    // LB: Do not forget to increment the pc before returning!
-    UpdatePC ();
-    // End of addition
-}*/
 
 void copyStringFromMachine(int from, char* to, unsigned int size) {
 	unsigned int i = 0;
@@ -188,29 +165,53 @@ ExceptionHandler(ExceptionType which)
 				break;
 			}
 			case SC_InitSemaphore: {
-				Semaphore *sem = new Semaphore((char*)machine->ReadRegister(4), machine->ReadRegister(5));
-				machine->WriteRegister(2, (int)sem);
-				DEBUG ('s', "Creation semaphore de %d\n", machine->ReadRegister(5));
+				int i;
+				for(i = 0; i < MAX_SEMAPHORE && currentThread->space->tabSemUser[i] != NULL; i++);
+
+				if (i == MAX_SEMAPHORE) {
+					machine->WriteRegister(2, -1);
+					currentThread->errorno = EMAXSEM;
+				} else {
+					currentThread->space->tabSemUser[i] = new Semaphore((char*)machine->ReadRegister(4), machine->ReadRegister(5));
+					machine->WriteRegister(2, i);
+					DEBUG ('s', "Creation semaphore de %d\n", machine->ReadRegister(5));
+				}
 				break;
 			}
 			case SC_DestroySemaphore: {
-				Semaphore *sem = (Semaphore*)machine->ReadRegister(4);
-				DEBUG ('s', "Destruction semaphore\n");
-				delete sem;
+				int i = machine->ReadRegister(4);
+				if (currentThread->space->tabSemUser[i] == NULL) {
+					machine->WriteRegister(2, -1);
+					currentThread->errorno = ESEMINVAL;
+				} else {
+					delete currentThread->space->tabSemUser[i];
+					machine->WriteRegister(2, 0);
+					DEBUG ('s', "Destruction semaphore\n");
+				}
 				break;
 			}
 			case SC_P: {
-				Semaphore *sem = (Semaphore*)machine->ReadRegister(4);
-				DEBUG ('s', "Avant prise semaphore\n");
-				sem->P();
-				DEBUG ('s', "Apres prise semaphore\n");
+				int i = machine->ReadRegister(4);
+				if (currentThread->space->tabSemUser[i] == NULL) {
+					machine->WriteRegister(2, -1);
+					currentThread->errorno = ESEMINVAL;
+				} else {
+					DEBUG ('s', "Avant prise semaphore\n");
+					currentThread->space->tabSemUser[i]->P();
+					DEBUG ('s', "Apres prise semaphore\n");
+				}
 				break;
 			}
 			case SC_V: {
-				Semaphore *sem = (Semaphore*)machine->ReadRegister(4);
-				DEBUG ('s', "Avant relache semaphore\n");
-				sem->V();
-				DEBUG ('s', "Apres relache semaphore\n");
+				int i = machine->ReadRegister(4);
+				if (currentThread->space->tabSemUser[i] == NULL) {
+					machine->WriteRegister(2, -1);
+					currentThread->errorno = ESEMINVAL;
+				} else {
+					DEBUG ('s', "Avant relache semaphore\n");
+					currentThread->space->tabSemUser[i]->V();
+					DEBUG ('s', "Apres relache semaphore\n");
+				}
 				break;
 			}
 			case SC_ForkExec: {
@@ -264,9 +265,9 @@ ExceptionHandler(ExceptionType which)
 				}
 				break;
 			}
-			case SC_Waitpid: {
-				DEBUG ('z', "do_Waitpid\n");
-				machine->WriteRegister(2, do_Waitpid());
+			case SC_Wait: {
+				DEBUG ('z', "do_Wait\n");
+				machine->WriteRegister(2, do_Wait());
 				break;
 			}
 			default: {

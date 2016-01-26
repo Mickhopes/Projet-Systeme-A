@@ -56,8 +56,8 @@
 #define StackSize	(4 * 1024)	// in words
 
 #ifdef USER_PROGRAM
-#define ThreadIdThreshold 1500000
-#define ProcIdThreshold 1500000
+#define ThreadIdThreshold 2000000000
+#define ProcIdThreshold 2000000000
 #endif
 
 // Thread state

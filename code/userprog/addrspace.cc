@@ -167,6 +167,11 @@ AddrSpace::AddrSpace (OpenFile * executable)
       semWaitUserThreads = new Semaphore("Waiting for main thread", 1);
       semWait = new Semaphore("Waiting for child process",0);
       semWaitFromFather = NULL;
+
+      tabSemUser = new Semaphore*[MAX_SEMAPHORE];
+      for(i = 0; i < MAX_SEMAPHORE; i++) {
+          tabSemUser[i] = NULL;
+      }
 }
 
 //----------------------------------------------------------------------
@@ -177,11 +182,17 @@ AddrSpace::AddrSpace (OpenFile * executable)
 AddrSpace::~AddrSpace ()
 {
     // We release all the frames used by this address space
-    unsigned int i;
-    for (i = 0; i < numPages; i++)
+    for (unsigned int i = 0; i < numPages; i++)
     {
         frameProvider->ReleaseFrame(pageTable[i].physicalPage);
     }
+
+    for(int i = 0; i < MAX_SEMAPHORE; i++) {
+        if (tabSemUser[i] != NULL) {
+            delete tabSemUser[i];
+        }
+    }
+    delete [] tabSemUser;
 
     // LB: Missing [] for delete
     // delete pageTable;
