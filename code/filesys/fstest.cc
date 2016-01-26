@@ -91,7 +91,7 @@ void run_test() {
 
     test_prompt("mkdir foo");
     strcpy(test_args[0], "foo");
-    fileSystem->MakeDir (test_args[0]);
+    fileSystem->CreateDir(test_args[0]);
 
     test_prompt("ls foo");
     strcpy(test_args[0], "foo");
@@ -99,15 +99,15 @@ void run_test() {
 
     test_prompt("mkdir foo/bar");
     strcpy(test_args[0], "foo/bar");
-    fileSystem->MakeDir (test_args[0]);
+    fileSystem->CreateDir(test_args[0]);
 
     test_prompt("cd foo/bar");
     strcpy(test_args[0], "foo/bar");
-    fileSystem->ChangeDir (test_args[0]);
+    fileSystem->ChangeDir(test_args[0]);
 
     test_prompt("touch zero");
     strcpy(test_args[0], "zero");
-    fileSystem->Create (test_args[0], 0);
+    fileSystem->Create(test_args[0], 0);
 
     test_prompt("print zero");
     strcpy(test_args[0], "zero");
@@ -132,11 +132,11 @@ void run_test() {
 
     test_prompt("ls big");
     strcpy(test_args[0], "big");
-    fileSystem->List (test_args[0]);
+    fileSystem->List(test_args[0]);
 
     test_prompt("cd ..");
     strcpy(test_args[0], "..");
-    fileSystem->ChangeDir (test_args[0]);
+    fileSystem->ChangeDir(test_args[0]);
 
     test_prompt("rm bar");
     strcpy(test_args[0], "bar");
@@ -144,11 +144,11 @@ void run_test() {
 
     test_prompt("rm bar/zero");
     strcpy(test_args[0], "bar/zero");
-    fileSystem->Remove (test_args[0]);
+    fileSystem->Remove(test_args[0]);
 
     test_prompt("rm bar/small");
     strcpy(test_args[0], "bar/small");
-    fileSystem->Remove (test_args[0]);
+    fileSystem->Remove(test_args[0]);
 
     test_prompt("rm bar/big");
     strcpy(test_args[0], "bar/big");
@@ -160,19 +160,19 @@ void run_test() {
 
     test_prompt("rm bar");
     strcpy(test_args[0], "bar");
-    fileSystem->Remove (test_args[0]);
+    fileSystem->Remove(test_args[0]);
 
     test_prompt("rm .");
     strcpy(test_args[0], ".");
-    fileSystem->Remove (test_args[0]);
+    fileSystem->Remove(test_args[0]);
 
     test_prompt("rm .");
     strcpy(test_args[0], ".");
-    fileSystem->Remove (test_args[0]);
+    fileSystem->Remove(test_args[0]);
 
     test_prompt("mkdir -p I/create/recursive/directory");
     strcpy(test_args[0], "I/create/recursive/directory");
-    fileSystem->MakeParentDir(test_args[0]);
+    fileSystem->CreateFatherDir(test_args[0]);
 
     test_prompt("cd I/create/recursive/directory");
     strcpy(test_args[0], "I/create/recursive/directory");
@@ -223,11 +223,11 @@ void ShellFileSys() {
             fileSystem->Remove (args[1]);
         }
         else if (!strcmp(args[0], "mkdir") && (nargs == 2) ) {
-            fileSystem->MakeDir (args[1]);
+            fileSystem->CreateDir (args[1]);
         }
         else if (!strcmp(args[0], "mkdir") && (nargs == 3) ) {
             if (!strcmp(args[1], "-p"))
-                fileSystem->MakeParentDir (args[2]);
+                fileSystem->CreateFatherDir (args[2]);
             else
                 show_help();
         }

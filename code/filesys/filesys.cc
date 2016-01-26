@@ -249,7 +249,7 @@ FileSystem::Create(const char *name, int initialSize)
 int FileSystem::CreateDir(char *name) 
 {
     bool error = false;
-    int baseSector = this->CurrentDir()->getCurrentSector();
+    int baseSector = this->CurrentDir()->GetCurrentSector();
     if (this->MoveToLastDir(name) == -1)
         return -1;
         
@@ -294,7 +294,7 @@ int FileSystem::CreateDir(char *name)
 
     if (!error) 
     {
-        int currentSector = currentDir->getCurrentSector();
+        int currentSector = currentDir->GetCurrentSector();
         currentDir->Add(name, freeSector);
 
         FileHeader *newDirHeader = new FileHeader;
@@ -320,10 +320,10 @@ int FileSystem::CreateDir(char *name)
 int FileSystem::CreateFatherDir(char *name) 
 {
     bool error = false;
-    int currentSector = this->CurrentDir()->getCurrentSector();
+    int currentSector = this->CurrentDir()->GetCurrentSector();
     if (strcmp(name, "/") == 0) 
     {
-        return this->MakeDir(name);
+        return this->CreateDir(name);
     }
     if (name[0] == '/') 
     {
@@ -346,7 +346,7 @@ int FileSystem::CreateFatherDir(char *name)
             i++;
         } else 
         {
-            if (this->MakeDir(paths[i]) != 0) 
+            if (this->CreateDir(paths[i]) != 0) 
             {
                 error = true;
                 break;
@@ -423,7 +423,7 @@ void FileSystem::List()
 
 void FileSystem::List(char * name)
 {
-    int currentSector = this->CurrentDir()->getCurrentSector();
+    int currentSector = this->CurrentDir()->GetCurrentSector();
     if (this->MoveToLastDir(name) != -1) {
         int sector = this->CurrentDir()->Find(name);
         OpenFile * remoteFile = new OpenFile(sector);
@@ -494,12 +494,12 @@ void FileSystem::Print()
 bool FileSystem::Remove(char *name)
 {
     bool error = false;
-    int currentSector = this->CurrentDir()->getCurrentSector();
+    int currentSector = this->CurrentDir()->GetCurrentSector();
     if (this->MoveToLastDir(name) == -1)
         return true;
     // si je fais rm / > name = "\0"
     if (strcmp(name, "\0") == 0) {
-        printf("rm: impossible supprimer le répertoire «/»\n");
+        printf("rm: forbidden «/»\n");
         return false;
     }
 
@@ -510,7 +510,7 @@ bool FileSystem::Remove(char *name)
 
     sector = directory->Find(name);
     if (sector == -1) {
-       printf("rm: le fichier ou dossier «%s» n'existe pas\n", name);
+       printf("rm: the file or directory «%s» isn't exist'\n", name);
        error = true;
     }
 
@@ -523,21 +523,21 @@ bool FileSystem::Remove(char *name)
             OpenFile * removeDirFile = new OpenFile(sector);
             Directory * removeDir = new Directory(NumDirEntries);
             removeDir->FetchFrom(removeDirFile);
-            if (!removeDir->isEmpty()) {
+            if (!removeDir->DirectoryisEmpty()) {
                 delete removeDirFile;
                 delete removeDir;
-                printf("rm : le dossier n'est pas vide\n");
+                printf("rm : directory isn't empty\n");
                 error = true;
-            } else if (removeDir->isRoot()) {
+            } else if (removeDir->DirectoryisRoot()) {
                 delete removeDirFile;
                 delete removeDir;
-                printf("rm: impossible supprimer le répertoire «/»\n");
+                printf("rm: directory «/» is not possible to delete\n");
                 error = true;
             }
             // si je me retrouve dans le dossier actuellement je remonte au parent
             // rm .
             else if (sector == currentSector) {
-                currentSector = removeDir->getParentSector();
+                currentSector = removeDir->GetFatherSector();
                 MoveToSector(currentSector);
                 directory = this->CurrentDir();
                 delete removeDirFile;
@@ -546,8 +546,8 @@ bool FileSystem::Remove(char *name)
             // si je fais un : rm /dir1/dir2/dir3/.
             // on se retrouve alors dans dir3 entrain de supprimer "."
             // et il faut revenir à / le dossier courant
-            else if (sector == removeDir->getCurrentSector()) {
-                MoveToSector(removeDir->getParentSector());
+            else if (sector == removeDir->GetCurrentSector()) {
+                MoveToSector(removeDir->GetFatherSector ());
                 directory = this->CurrentDir();
                 delete removeDirFile;
                 delete removeDir;
@@ -558,7 +558,7 @@ bool FileSystem::Remove(char *name)
         freeMap = new BitMap(NumSectors);
         freeMap->FetchFrom(freeMapFile);
 
-        directoryFile = new OpenFile(directory->getCurrentSector());
+        directoryFile = new OpenFile(directory->GetCurrentSector());
 
         // suppression
         fileHdr->Deallocate(freeMap);          // remove data blocks
@@ -606,13 +606,13 @@ int FileSystem::MoveToDir(char *name) {
     Directory *currentDir = this->CurrentDir();
     int dirSector = currentDir->Find(name);
     if (dirSector == -1) {
-        printf("Le dossier %s%s n'existe pas\n", CurrentDir()->getDirName(), name);
+        printf("Le dossier %s%s n'existe pas\n", CurrentDir()->GetDirName(), name);
         delete currentDir;
         return -1;
     }
     int result = MoveToSector(dirSector);
     if (result == -1)
-        printf("%s%s n'est pas un dossier\n", CurrentDir()->getDirName(), name);
+        printf("%s%s n'est pas un dossier\n", CurrentDir()->GetDirName(), name);
     delete currentDir;
     return result;
 }
@@ -664,7 +664,7 @@ int FileSystem::MoveToLastDir(char * name)
 
 char * FileSystem::GetWorkingDirectory () {
     workingDir = new char[MAX_DIRNAME_SIZE];
-    workingDir = CurrentDir()->getDirName();
+    workingDir = CurrentDir()->GetDirName();
     return workingDir;
 }
 

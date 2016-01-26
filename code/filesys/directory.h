@@ -18,6 +18,7 @@
 #define DIRECTORY_H
 
 #include "openfile.h"
+#include "errorno.h"
 
 #define FileNameMaxLen     9  // for simplicity, we assume
           // file names are <= 9 characters long
@@ -74,16 +75,16 @@ class Directory {
     void Print();   // Verbose print of the contents
                     //  of the directory -- all the file
                     //  names and their contents.
-    int getSector(int position);
-    int getCurrentSector();
-    int getFatherSector();
+    int GetSector(int position);
+    int GetCurrentSector();
+    int GetFatherSector();
 
     bool DirectoryisFull();
     bool DirectoryisEmpty();
     bool DirectoryisRoot();
 
-    char * getNameFromSector(int sector);
-    char * getDirName();
+    char *GetNameFromSector(int sector);
+    char *GetDirName();
 
   private:
     int tableSize;              // Number of directory entries
