@@ -188,9 +188,7 @@ AddrSpace::~AddrSpace ()
     }
 
     for(int i = 0; i < MAX_SEMAPHORE; i++) {
-        if (tabSemUser[i] != NULL) {
-            delete tabSemUser[i];
-        }
+        delete tabSemUser[i];
     }
     delete [] tabSemUser;
 
@@ -203,7 +201,7 @@ AddrSpace::~AddrSpace ()
     delete mutex;
     delete bitmap;
     delete [] threadList;
-    delete semWait;
+    semWaitFromFather = NULL;
 }
 
 //----------------------------------------------------------------------
@@ -402,12 +400,4 @@ AddrSpace::WaitForThread (unsigned int threadId, unsigned int joinId, Semaphore 
 int
 AddrSpace::Sbrk(unsigned int n) {
     return 0;
-}
-
-int do_Waitpid(){
-  DEBUG ('z', "Wait par process %s\n",currentThread->pid);
-
-  currentThread->space->semWait->P();
-
-  return 0;
 }

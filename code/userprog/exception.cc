@@ -257,7 +257,9 @@ ExceptionHandler(ExceptionType which)
 					DEBUG ('y', "%s décrémente nbProc, il reste %d processus\n",currentThread->getName(), nbProc);
 					semNumProc->V();
 					if (currentThread->space->semWaitFromFather != NULL){
+						DEBUG('y', "c'est ici %s\n", currentThread->getName());
 						currentThread->space->semWaitFromFather->V();
+						DEBUG('y', "ah non\n");
 					}
 					delete currentThread->space;
 					DEBUG ('y', "Avant finish sur le thread %s\n",currentThread->getName());

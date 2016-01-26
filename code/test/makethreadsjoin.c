@@ -17,9 +17,9 @@ void attendre(void* arg) {
 			PutString("Deadlock detecte\n");
 		}
 	}
-	PutChar('\n');
-	
-	UserThreadExit();
+	PutString("Le thread ");
+	PutInt((int)arg);
+	PutString(" s'est termine avant celui-ci.\n");
 }	
 
 void print(void *arg){
@@ -30,22 +30,21 @@ void print(void *arg){
 		i++;
 	}
 	PutChar('\n');
-
-	UserThreadExit();
 }
 
 
 int main(){
 	int id;
 
-	if((id = UserThreadCreate(print, NULL)) != -1){
-		PutString("Je suis le premier !\n");
+	if((id = UserThreadCreate(print, NULL)) == -1){
+		PutString("Erreur lors de la création du thread: ");
+		PutInt(GetErrorNo());
+		PutChar('\n');
 	}
-	if(UserThreadCreate(attendre,(void*) 3) != -1){
-		PutString("Je suis le second !\n");
-	}
-	if(UserThreadCreate(attendre,(void*) 2) != -1){
-		PutString("Je suis le troisieme !\n");
+	if(UserThreadCreate(attendre,(void*) id) == -1){
+		PutString("Erreur lors de la création du thread: ");
+		PutInt(GetErrorNo());
+		PutChar('\n');
 	}
 	
 	return 0;
