@@ -89,6 +89,11 @@ void do_UserThreadExit(){
 int do_UserThreadJoin(unsigned int threadId){
 	DEBUG ('z', "Join du thread %s sur %d\n",currentThread->getName(), threadId);
 
+	if ((int)threadId == currentThread->tid) {
+		currentThread->errorno = EDEADLK;
+		return -1;
+	}
+
 	currentThread->semJoin = new Semaphore("Join", 0);
 
 	int ret;
