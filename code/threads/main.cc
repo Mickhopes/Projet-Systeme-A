@@ -145,7 +145,7 @@ main (int argc, char **argv)
 	    }
 	  else if (!strcmp (*argv, "-l"))
 	    {			// list Nachos directory
-		fileSystem->ListAll ();
+		fileSystem->List();
 	    }
 	  else if (!strcmp (*argv, "-D"))
 	    {			// print entire filesystem
