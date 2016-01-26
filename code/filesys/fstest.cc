@@ -21,6 +21,7 @@
 #include "disk.h"
 #include "stats.h"
 
+
 #define TransferSize     10     // make it small, just to be difficult
 #define SHELL_BUFFER_SIZE 1<<16
 #define SHELL_ARGS_SIZE 1<<16
@@ -186,11 +187,13 @@ void run_test() {
 }
 
 
-void ShellFileSys() {
+void ShellFileSys() 
+{
     char buffer[SHELL_BUFFER_SIZE];
     size_t nargs;
     char *args[SHELL_ARGS_SIZE];
     show_help();
+    fileSystem = new FileSystem (true);
     while(1) {
         prompt();
         if (fgets(buffer, SHELL_BUFFER_SIZE, stdin) == NULL) break;
@@ -199,10 +202,10 @@ void ShellFileSys() {
         if (nargs==0) continue;
         else if (!strcmp(args[0], "exit" )) break;
         else if (!strcmp(args[0], "ls" ) && (nargs == 1)) {
-            fileSystem->List ();
+            fileSystem->List();
         }
         else if (!strcmp(args[0], "ls" ) && (nargs == 2)) {
-            fileSystem->List (args[1]);
+            fileSystem->List(args[1]);
         }
         else if (!strcmp(args[0], "cd") && (nargs == 1) ) {
             fileSystem->MoveToRoot();
@@ -211,23 +214,23 @@ void ShellFileSys() {
             fileSystem->ChangeDir(args[1]);
         }
         else if (!strcmp(args[0], "touch") && (nargs == 2) ) {
-            fileSystem->Create (args[1], 0);
+            fileSystem->Create(args[1], 0);
         }
         else if (!strcmp(args[0], "print") && (nargs == 2) ) {
-            Print (args[1]);
+            Print(args[1]);
         }
         else if (!strcmp(args[0], "cp") && (nargs == 3) ) {
             Copy(args[1], args[2]);
         }
         else if (!strcmp(args[0], "rm") && (nargs == 2) ) {
-            fileSystem->Remove (args[1]);
+            fileSystem->Remove(args[1]);
         }
         else if (!strcmp(args[0], "mkdir") && (nargs == 2) ) {
-            fileSystem->CreateDir (args[1]);
+            fileSystem->CreateDir(args[1]);
         }
         else if (!strcmp(args[0], "mkdir") && (nargs == 3) ) {
             if (!strcmp(args[1], "-p"))
-                fileSystem->CreateFatherDir (args[2]);
+                fileSystem->CreateFatherDir(args[2]);
             else
                 show_help();
         }
@@ -235,7 +238,7 @@ void ShellFileSys() {
             printf("%s\n", fileSystem->GetWorkingDirectory());
         }
         else if (!strcmp(args[0], "format")) {
-            fileSystem = new FileSystem (true);
+            fileSystem = new FileSystem(true);
         }
         else if (!strcmp(args[0], "test")) {
             // on lance quelques tests
@@ -274,24 +277,67 @@ void Copy(const char *from, const char *to) {
 
     // Create a Nachos file of the same length
     DEBUG('f', "Copying file %s, size %d, to file %s\n", from, fileLength, to);
-    if (!fileSystem->Create(to, fileLength)) {     // Create Nachos file
-        printf("Copy: couldn't create output file %s\n", to);
-        fclose(fp);
-        return;
+    char *paths[MaxDepth];
+    int npath;
+    fileSystem->parse_path((char *)to, paths, &npath);
+    if(npath == 1)
+    {
+		if (!fileSystem->Create(to, fileLength)) 
+		{     // Create Nachos file
+		    printf("Copy: couldn't create output file %s\n", to);
+		    fclose(fp);
+		    return;
+		}
+
+		openFile = fileSystem->Open(to);
+		ASSERT(openFile != NULL);
+
+		// Copy the data in TransferSize chunks
+		buffer = new char[TransferSize];
+		while ((amountRead = fread(buffer, sizeof(char), TransferSize, fp)) > 0)
+		openFile->Write(buffer, amountRead);
+		delete [] buffer;
+
+		// Close the UNIX and the Nachos files
+		delete openFile;
+    	fclose(fp);
+    }else
+    {
+    	Directory *directory = new Directory(NumDirEntries);
+    	directory->FetchFrom(fileSystem->GetdirectoryFile());
+    	char *dirName = new char[DirNameMaxLen];
+		int i;
+		for(i =0; i< npath - 1; i++)
+		{
+			DEBUG('j',"%s\n",paths[i]);
+			strcat(dirName, paths[i]);
+		}
+		char *curName = directory->GetDirName();
+		fileSystem->ChangeDir(dirName);
+		directory = new Directory(NumDirEntries);
+    	directory->FetchFrom(fileSystem->GetdirectoryFile());
+    	to  = paths[i];
+    	if (!fileSystem->Create(to, fileLength)) 
+		{     // Create Nachos file
+		    printf("Copy: couldn't create output file %s\n", to);
+		    fclose(fp);
+		    return;
+		}
+
+		openFile = fileSystem->Open(to);
+		ASSERT(openFile != NULL);
+
+		// Copy the data in TransferSize chunks
+		buffer = new char[TransferSize];
+		while ((amountRead = fread(buffer, sizeof(char), TransferSize, fp)) > 0)
+		openFile->Write(buffer, amountRead);
+		delete [] buffer;
+
+		// Close the UNIX and the Nachos files
+		delete openFile;
+		fileSystem->ChangeDir(curName);
+    	fclose(fp);
     }
-
-    openFile = fileSystem->Open(to);
-    ASSERT(openFile != NULL);
-
-    // Copy the data in TransferSize chunks
-    buffer = new char[TransferSize];
-    while ((amountRead = fread(buffer, sizeof(char), TransferSize, fp)) > 0)
-    openFile->Write(buffer, amountRead);
-    delete [] buffer;
-
-    // Close the UNIX and the Nachos files
-    delete openFile;
-    fclose(fp);
 }
 
 //----------------------------------------------------------------------

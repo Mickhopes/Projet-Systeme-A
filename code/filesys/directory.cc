@@ -277,7 +277,7 @@ char * Directory::GetNameFromSector(int sector)
             return table[i].name;
         }
     return NULL;
-};
+}
 
 int Directory::GetSector(int position) 
 {

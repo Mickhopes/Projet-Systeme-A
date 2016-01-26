@@ -39,6 +39,14 @@
 #include "openfile.h"
 #include "directory.h"
 
+
+#define FreeMapFileSize     (NumSectors / BitsInByte)
+#define NumDirEntries         10
+#define DirectoryFileSize     (sizeof(DirectoryEntry) * NumDirEntries * 1)
+#define MaxDepth 10
+#define DirNameMaxLen 100
+
+
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as
 				// calls to UNIX, until the real file system
 				// implementation is available
@@ -68,7 +76,11 @@ class FileSystem {
 #else // FILESYS
 class FileSystem {
   public:
-    FileSystem(bool format);		// Initialize the file system.
+  
+	void parse_path(char *buffer, char** args, int *nargs);
+  
+  
+	FileSystem(bool format);		// Initialize the file system.
 					// Must be called *after* "synchDisk"
 					// has been initialized.
     					// If "format", there is nothing on
@@ -104,6 +116,8 @@ class FileSystem {
     int MoveToLastDir(char *path);
 
     Directory * CurrentDir();
+    
+    OpenFile *GetdirectoryFile();
 
   private:
    int CurrentSector;
