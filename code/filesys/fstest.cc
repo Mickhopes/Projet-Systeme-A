@@ -23,6 +23,10 @@
 
 #define TransferSize 	10 	// make it small, just to be difficult
 
+#define MaxLenCmd 300
+
+#define MaxArg 5
+
 //----------------------------------------------------------------------
 // Copy
 // 	Copy the contents of the UNIX file "from" to the Nachos file "to"
@@ -131,22 +135,26 @@ FileWrite()
     printf("Sequential write of %d byte file, in %zd byte chunks\n", 
 	FileSize, ContentSize);
 	
-    if (!fileSystem->Create((char*)fileNa, 0)) {
-      printf("Perf test: can't create %s\n", fileNa);
-      return;
+    if (!fileSystem->Create((char*)fileNa, 0)) 
+    {
+		printf("Perf test: can't create %s\n", fileNa);
+		return;
     }
     openFile = fileSystem->Open((char*)fileNa);
-    if (openFile == NULL) {
-	printf("Perf test: unable to open %s\n", fileNa);
-	return;
+    if (openFile == NULL) 
+    {
+		printf("Perf test: unable to open %s\n", fileNa);
+		return;
     }
-    for (i = 0; i < FileSize; i += ContentSize) {
+    for (i = 0; i < FileSize; i += ContentSize) 
+    {
         numBytes = openFile->Write(Contents, ContentSize);
-	if (numBytes < 10) {
-	    printf("Perf test: unable to write %s\n", fileNa);
-	    delete openFile;
-	    return;
-	}
+		if (numBytes < 10) 
+		{
+			printf("Perf test: unable to write %s\n", fileNa);
+			delete openFile;
+			return;
+		}
     }
     delete openFile;	// close file
 }
@@ -193,5 +201,109 @@ PerformanceTest()
       return;
     }
     stats->Print();
+}
+
+/*-------------------------------------------
+				SHELL
+-----------------------------------------*/		
+
+void parse_args(char *buffer, char** args, size_t args_size, size_t *nargs)
+{
+    char *buf_args[args_size];
+    char **cp;
+    char *wbuf;
+    size_t i, j;
+
+    wbuf=buffer;
+    buf_args[0]=buffer;
+    args[0] =buffer;
+
+    for(cp=buf_args; (*cp=strsep(&wbuf, " \n\t")) != NULL ;){
+        if ((*cp != '\0') && (++cp >= &buf_args[args_size]))
+            break;
+    }
+
+    for (j=i=0; buf_args[i]!=NULL; i++){
+        if(strlen(buf_args[i])>0)
+            args[j++]=buf_args[i];
+    }
+
+    *nargs=j;
+    args[j]=NULL;
+}
+
+void prompt() {
+    printf("nachos %s $ ", fileSystem->GetWorkingNameDirectory());
+}
+
+void show_help() {
+    printf("\nCommandes disponibles :\n");
+    printf("exit\n");
+    printf("ls [<path>]\n");
+    printf("cd [<path>]\n");
+    printf("touch <filename>\n");
+    printf("print <filename>\n");
+    printf("cp <src> <dest>\n");
+    printf("rm <path>\n");
+    printf("mkdir <dirname>\n");
+    printf("mkdir -p <path>\n");
+    printf("pwd\n");
+}
+
+
+
+
+void ShellFileSys() {
+    char buffer[MaxLenCmd];
+    size_t nargs;
+    char *args[MaxArg];
+    show_help();
+    while(1) {
+        prompt();
+        if (fgets(buffer, MaxLenCmd, stdin) == NULL) break;
+        parse_args(buffer, args, MaxArg, &nargs);
+
+        if (nargs==0) continue;
+        else if (!strcmp(args[0], "exit" )) break;
+        else if (!strcmp(args[0], "ls" ) && (nargs == 1)) {
+            fileSystem->ListAll();
+        }
+        else if (!strcmp(args[0], "ls" ) && (nargs == 2)) {
+            fileSystem->ListName(args[1]);
+        }
+        else if (!strcmp(args[0], "cd") && (nargs == 1) ) {
+            fileSystem->CdDir((char *)"/");
+        }
+        else if (!strcmp(args[0], "cd") && (nargs == 2) ) {
+            fileSystem->CdDir(args[1]);
+        }
+        else if (!strcmp(args[0], "touch") && (nargs == 2) ) {
+            fileSystem->Create(args[1], 0);
+        }
+        else if (!strcmp(args[0], "print") && (nargs == 2) ) {
+            Print (args[1]);
+        }
+        else if (!strcmp(args[0], "cp") && (nargs == 3) ) {
+            Copy(args[1], args[2]);
+        }
+        else if (!strcmp(args[0], "rm") && (nargs == 2) ) {
+            fileSystem->Remove(args[1]);
+        }
+        else if (!strcmp(args[0], "mkdir") && (nargs == 2) ) {
+            fileSystem->CreateDirectory(args[1]);
+        }
+        else if (!strcmp(args[0], "pwd") && (nargs == 1) ) {
+            printf("%s\n", fileSystem->GetWorkingNameDirectory());
+        }
+        else if (!strcmp(args[0], "format")) {
+            fileSystem = new FileSystem (true);
+        }
+        else {
+            show_help();
+        }
+    }
+
+    printf("\nBye\n");
+    interrupt->Halt();
 }
 

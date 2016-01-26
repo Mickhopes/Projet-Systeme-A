@@ -301,7 +301,7 @@ ExceptionHandler(ExceptionType which)
 			
 			default: {
 				printf("Unexpected user mode exception %d %d\n", which, type);
-				ASSERT(FALSE);
+				ASSERT(false);
 			}
 		}
 		UpdatePC();

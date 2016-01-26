@@ -38,7 +38,7 @@ DebugInit (const char *flagList)
 
 //----------------------------------------------------------------------
 // DebugIsEnabled
-//      Return TRUE if DEBUG messages with "flag" are to be printed.
+//      Return true if DEBUG messages with "flag" are to be printed.
 //----------------------------------------------------------------------
 
 bool
@@ -48,7 +48,7 @@ DebugIsEnabled (char flag)
 	return (strchr (enableFlags, flag) != 0)
 	    || (strchr (enableFlags, '+') != 0);
     else
-	return FALSE;
+	return false;
 }
 
 //----------------------------------------------------------------------

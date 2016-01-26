@@ -126,7 +126,7 @@ int
 Directory::FindIndex(char *name)
 {
     for (int i = 0; i < tableSize; i++)
-        if (table[i].inUse && !strncmp(table[i].name, name, fileNameMaxLen))
+        if (table[i].inUse && strcmp(table[i].name, name) == 0)
 			return i;
     return -1;		// name not in directory
 }
@@ -209,7 +209,6 @@ bool Directory::Add(char *name, int newSector, int isDirectory)
 		else
 			return AddDirectory(name, newSector);
 	}
-    return false;	//for compilation
 }
 
 

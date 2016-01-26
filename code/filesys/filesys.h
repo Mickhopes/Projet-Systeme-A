@@ -109,7 +109,7 @@ class FileSystem {
     
 
 	/*
-	*List all file and direstory in file system
+	*List all file and direstory in currentDirectory
 	*/
     void ListAll();		
     
@@ -126,14 +126,37 @@ class FileSystem {
 	* return a current directory;
 	*/				
 	Directory *GetCurrentDirectory();
+	
+	
 
     void Print();			// List all the files and their contents
-
+    
+    
+    /*---------------------------------
+    Console
+    --------------------------------*/
+    
+    
+    /*
+	* GetWorkingNameDirectory
+	* return the name of the current directory
+	*/
+	char *GetWorkingNameDirectory();
+	
+	/*
+	* CdDir
+	* change in directory named name(it's possible to change one path)
+	* return -1 if name isn't exist
+	* errorno is update
+	*/
+	int CdDir(char *name);
   private:
 	OpenFile* freeMapFile;		// Bit map of free disk blocks,
 					// represented as a file
 	OpenFile* directoryFile;		// "Root" directory -- list of 
 					// file names, represented as a file
+					
+	char *WorkingNameDirectory; //use for shell
 	
 
 	

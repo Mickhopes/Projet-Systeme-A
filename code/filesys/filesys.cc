@@ -140,6 +140,7 @@ FileSystem::FileSystem(bool format)
 		// the bitmap and directory; these are left open while Nachos is running
 	    freeMapFile = new OpenFile(FreeMapSector);
 	    directoryFile = new OpenFile(DirectorySector);
+	    WorkingNameDirectory = new char[directoryNameMaxLen];
 	}
 }
 
@@ -180,29 +181,42 @@ bool FileSystem::Create(char *name, int initialSize)
     int sector;
     bool success;
 
-    DEBUG('f', "Creating file %s, size %d\n", name, initialSize);
+    DEBUG('w', "Creating file %s, size %d\n", name, initialSize);
 
     directory = new Directory(NumDirEntries);
     directory->FetchFrom(directoryFile);
 
     if (directory->FindSectorWithName(name) != -1)
+    {
+     DEBUG('v', "exist deja\n");
       success = FALSE;			// file is already in directory
+   }
     else 
     {	
         freeMap = new BitMap(NumSectors);
         freeMap->FetchFrom(freeMapFile);
         sector = freeMap->Find();	// find a sector to hold the file header
-    	if (sector == -1) 		
+    	if (sector == -1) 
+    	{
+    	 DEBUG('v', "pas de secteur\n");		
             success = FALSE;		// no free block for file header 
+        }
         else if (!directory->Add(name, sector,0))
+        {
+        	DEBUG('v', "pas de place\n");	
             success = FALSE;	// no space in directory
+        }
 		else 
 		{
     	    hdr = new FileHeader;
 	    	if (!hdr->Allocate(freeMap, initialSize))
+	    	{
+	    		DEBUG('v', "allocation failed\n");
             	success = FALSE;	// no space on disk for data
+			}
 			else 
 			{	
+				DEBUG('v', "save\n");
 	    		success = TRUE;
 				// everthing worked, flush all changes back to disk
     	    	hdr->WriteBack(sector); 		
@@ -360,13 +374,16 @@ FileSystem::Open(char *name)
     OpenFile *openFile = NULL;
     int sector;
 
-    DEBUG('f', "Opening file %s\n", name);
+    DEBUG('w', "Opening file %s\n", name);
     directory->FetchFrom(directoryFile);
     sector = directory->FindSectorWithName(name); 
     if (sector >= 0) 	
     {
+    	DEBUG('v', "file find %d\n", sector);
     	openFile = new OpenFile(sector);	// name was found in directory 
-    }	
+    }
+    else
+    	DEBUG('v', "file not find\n");	
     delete directory;
     return openFile;				// return NULL if not found
 }
@@ -398,10 +415,19 @@ FileSystem::Remove(char *name)
     sector = directory->FindSectorWithName(name);
     if (sector == -1) {
        delete directory;
-       return FALSE;			 // file not found 
+       return false;			 // file not found 
     }
     fileHdr = new FileHeader;
     fileHdr->FetchFrom(sector);
+    
+    if(fileHdr->FileDirectory() == 1)
+    {
+    	if ((directory->Remove(name)) == false)
+    	{
+    		return false;
+    	}
+    	
+    }
 
     freeMap = new BitMap(NumSectors);
     freeMap->FetchFrom(freeMapFile);
@@ -415,7 +441,7 @@ FileSystem::Remove(char *name)
     delete fileHdr;
     delete directory;
     delete freeMap;
-    return TRUE;
+    return true;
 } 
 
 
@@ -515,4 +541,31 @@ int FileSystem::CreateDir(char *name)
 	delete maps;
 	delete currentDir;
 	return 0;
+}
+
+
+char *FileSystem::GetWorkingNameDirectory()
+{
+	return WorkingNameDirectory;
+}
+
+
+int FileSystem::CdDir(char *name)
+{
+	Directory *dir = GetCurrentDirectory();
+	int i = dir->FindIndexWithName(name);
+	if(i == -1)
+	{
+		errorno = ENAMENOTEXIST;
+		return i;
+	}
+	if(dir->GetTable()[i].isDirectory == 0)
+	{
+		errorno = EWTYPE;
+		return -1;
+	}
+	strcpy(WorkingNameDirectory, dir->GetNameDirectory());
+	directoryFile = new OpenFile(dir->GetTable()[i].sector);
+	return 0;
+	
 }

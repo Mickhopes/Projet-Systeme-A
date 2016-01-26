@@ -133,7 +133,7 @@ class Directory {
 	 *
 	 * name is the name of directory or file
 	 * newSector is the sector where the file (or directory) is save
-	 * isDirectory indicated the type of target(0 for directory and 1 for directory)
+	 * isDirectory indicated the type of target(0 for file and 1 for directory)
 	 */
     bool Add(char *name, int newSector, int isDirectory);
     
