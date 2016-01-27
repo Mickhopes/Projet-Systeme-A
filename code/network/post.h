@@ -33,7 +33,7 @@
 
 #define NbAckTable 1000
 
-#define TEMPO 100000
+#define TEMPO 10000000
 #define MAXREEMISSIONS 15
 
 #define MAXBUFFERSIZE 1000

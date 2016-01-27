@@ -132,7 +132,7 @@ ExceptionHandler(ExceptionType which)
 			case SC_GetString: {
 				char buff[MAX_STRING_SIZE];
 				synchconsole->SynchGetString(buff, machine->ReadRegister(5));
-				CopyStringInMachineMemory(buff,(char *)machine->ReadRegister(4), MAX_STRING_SIZE-1);
+				CopyStringInMachineMemory(buff,(char *)machine->ReadRegister(4), machine->ReadRegister(5));
 				
 				break;
 			}

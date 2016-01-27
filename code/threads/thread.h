@@ -106,7 +106,7 @@ class Thread
     // other thread is runnable
     void Sleep ();		// Put the thread to sleep and 
     // relinquish the processor
-    void Sleep (long long n); // Put the thread to sleep a certain amoun of time n
+    void Sleep (long long n); // Put the thread to sleep a certain amount of time n
     
     void Finish ();		// The thread is done executing
 

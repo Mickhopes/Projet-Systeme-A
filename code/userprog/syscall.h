@@ -157,7 +157,7 @@ char GetChar ();
 void PutString (char *c);
 
 /* Read the string in the standard input */
-char* GetString ();
+void GetString (char *s, int n);
 
 /* Write the int to the standard output */
 void PutInt (int n);
