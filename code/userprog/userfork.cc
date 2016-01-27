@@ -27,7 +27,8 @@ do_ForkExec (char *filename)
 		return -1;
 	}
 
-	if (nbProc == MaxForkExec) {
+	//+1 car exclure le main de la limite de 12.
+	if (nbProc == MaxForkExec+1) {
 		currentThread->errorno = EMAXPROC;
 		return -1;
 	}

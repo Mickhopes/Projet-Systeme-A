@@ -94,8 +94,6 @@ int do_UserThreadJoin(unsigned int threadId){
 		return -1;
 	}
 
-	currentThread->semJoin = new Semaphore("Join", 0);
-
 	int ret;
 	if ((ret = currentThread->space->IsJoinableUserThread(threadId, currentThread->tid)) < 0) {
 		switch(ret) {
@@ -111,6 +109,8 @@ int do_UserThreadJoin(unsigned int threadId){
 		}
 		return -1;
 	}
+
+	currentThread->semJoin = new Semaphore("Join", 0);
 
 	currentThread->space->WaitForThread(threadId, currentThread->tid, currentThread->semJoin);
 
