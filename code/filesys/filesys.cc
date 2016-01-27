@@ -214,32 +214,48 @@ FileSystem::Create(const char *name, int initialSize)
     parse_path((char *)name, paths, &npath);
     if(npath == 1)
     {
-		if (directory->Find(name) != -1)
-		  success = FALSE;            // file is already in directory
+    	if(strlen(name) > FileNameMaxLen) 
+    	{
+			printf("file name %s is too long\n",name);
+			success = FALSE;
+		}
+		else if (directory->Find(name) != -1)
+		{
+			printf("%s already exist\n",name);
+			success = FALSE;            // file is already in directory
+		}
+		else if(directory->DirectoryisFull())
+		{
+			printf("directory is full\n");
+			success = FALSE; 
+		}
 		else 
 		{
 		    freeMap = new BitMap(NumSectors);
 		    freeMap->FetchFrom(freeMapFile);
-		    sector = freeMap->Find();    // find a sector to hold the file header
+		    sector = freeMap->Find();   
 		    if (sector == -1)
-		        success = FALSE;        // no free block for file header
-		    else if (!directory->Add(name, sector))
-		        success = FALSE;    // no space in directory
-		    else 
 		    {
-		            hdr = new FileHeader;
-		        if (!hdr->Allocate(freeMap, initialSize))
-		                success = FALSE;    // no space on disk for data
-		        else 
-		        {
-		            success = TRUE;
-		        // everthing worked, flush all changes back to disk
-		            hdr->WriteBack(sector);
-		            directory->WriteBack(directoryFile);
-		            freeMap->WriteBack(freeMapFile);
-		        }
-		        delete hdr;
-		    }
+		    	printf("hard disk is full");
+				success = FALSE;       
+			}
+			directory->Add(name, sector);
+			hdr = new FileHeader;
+	        if (!hdr->Allocate(freeMap, initialSize))
+	        {
+	        	printf("hard disk is full");
+				success = FALSE;    
+			}
+	        else 
+	        {
+				success = TRUE;
+				
+				
+				hdr->WriteBack(sector);
+				directory->WriteBack(directoryFile);
+				freeMap->WriteBack(freeMapFile);
+	        }
+	        delete hdr;
 		    delete freeMap;
 		}
 		delete directory;
@@ -265,32 +281,49 @@ FileSystem::Create(const char *name, int initialSize)
 		directory = new Directory(NumDirEntries);
     	directory->FetchFrom(directoryFile);
     	name  = paths[i];
-		if (directory->Find(name) != -1)
-		  success = FALSE;            // file is already in directory
+    	
+		if(strlen(name) > FileNameMaxLen) 
+    	{
+			printf("file name %s is too long\n",name);
+			success = FALSE;
+		}
+		else if (directory->Find(name) != -1)
+		{
+			printf("%s already exist\n",name);
+			success = FALSE;            // file is already in directory
+		}
+		else if(directory->DirectoryisFull())
+		{
+			printf("directory is full\n");
+			success = FALSE; 
+		}
 		else 
 		{
 		    freeMap = new BitMap(NumSectors);
 		    freeMap->FetchFrom(freeMapFile);
-		    sector = freeMap->Find();    // find a sector to hold the file header
+		    sector = freeMap->Find();   
 		    if (sector == -1)
-		        success = FALSE;        // no free block for file header
-		    else if (!directory->Add(name, sector))
-		        success = FALSE;    // no space in directory
-		    else 
 		    {
-		            hdr = new FileHeader;
-		        if (!hdr->Allocate(freeMap, initialSize))
-		                success = FALSE;    // no space on disk for data
-		        else 
-		        {
-		            success = TRUE;
-		        // everthing worked, flush all changes back to disk
-		            hdr->WriteBack(sector);
-		            directory->WriteBack(directoryFile);
-		            freeMap->WriteBack(freeMapFile);
-		        }
-		        delete hdr;
-		    }
+		    	printf("hard disk is full");
+				success = FALSE;       
+			}
+			directory->Add(name, sector);
+			hdr = new FileHeader;
+	        if (!hdr->Allocate(freeMap, initialSize))
+	        {
+	        	printf("hard disk is full");
+				success = FALSE;    
+			}
+	        else 
+	        {
+				success = TRUE;
+				
+				
+				hdr->WriteBack(sector);
+				directory->WriteBack(directoryFile);
+				freeMap->WriteBack(freeMapFile);
+	        }
+	        delete hdr;
 		    delete freeMap;
 		}
 		delete directory;
@@ -303,65 +336,65 @@ FileSystem::Create(const char *name, int initialSize)
 
 int FileSystem::CreateDir(char *name) 
 {
-    bool error = false;
     int baseSector = this->CurrentDir()->GetCurrentSector();
     if (this->MoveToLastDir(name) == -1)
         return -1;
         
     if (strcmp(name, "\0") == 0) 
     {
-        return -1;
+		return -1;
     }
 
     Directory *currentDir = this->CurrentDir();
 
     if(strlen(name) > FileNameMaxLen) 
     {
-        error = true;
+    	printf("directory name %s is too long\n",name);
+    	delete currentDir;
+		return -1;
     }
-
-    if (!error && currentDir->Find(name) != -1) 
+    else if (currentDir->Find(name) != -1) 
     {
-       error = true;
+    	printf("%s already exist\n",name);
+    	delete currentDir;
+		return -1;
     }
-
-    if (!error && currentDir->DirectoryisFull()) 
+    else if (currentDir->DirectoryisFull()) 
     {
-        error = true;
+    	printf("directory is full\n");
+    	delete currentDir;
+		return -1;
     }
 
     BitMap *freeMap = new BitMap(NumSectors);
     int freeSector;
-    if (!error) 
+    freeMap->FetchFrom(freeMapFile);
+    freeSector = freeMap->Find();
+    if (freeSector == -1) 
     {
-        freeMap->FetchFrom(freeMapFile);
-        freeSector = freeMap->Find();
-        if (freeSector == -1) 
-        {
-            error = true;
-        }
+    	delete freeMap;
+    	delete currentDir;
+    	printf("hard disk full\n");
+        return -1;
     }
+    
+    int currentSector = currentDir->GetCurrentSector();
+    currentDir->Add(name, freeSector);
 
-    if (!error) 
-    {
-        int currentSector = currentDir->GetCurrentSector();
-        currentDir->Add(name, freeSector);
+    FileHeader *newDirHeader = new FileHeader;
+    ASSERT(newDirHeader->Allocate(freeMap, -1 * DirectoryFileSize));
+    newDirHeader->WriteBack(freeSector);
 
-        FileHeader *newDirHeader = new FileHeader;
-        ASSERT(newDirHeader->Allocate(freeMap, -1 * DirectoryFileSize));
-        newDirHeader->WriteBack(freeSector);
+    Directory *newDir = new Directory(NumDirEntries, freeSector, currentSector);
+    OpenFile *newDirFile = new OpenFile(freeSector);
+    newDir->WriteBack(newDirFile);
+    currentDir->WriteBack(directoryFile);
+    freeMap->WriteBack(freeMapFile);
 
-        Directory *newDir = new Directory(NumDirEntries, freeSector, currentSector);
-        OpenFile *newDirFile = new OpenFile(freeSector);
-        newDir->WriteBack(newDirFile);
-        currentDir->WriteBack(directoryFile);
-        freeMap->WriteBack(freeMapFile);
-
-        delete freeMap;
-        delete newDirHeader;
-        delete newDirFile;
-        delete newDir;
-    }
+    delete freeMap;
+    delete newDirHeader;
+    delete newDirFile;
+    delete newDir;
     this->MoveToSector(baseSector);
     delete currentDir;
     return 0;
@@ -369,8 +402,9 @@ int FileSystem::CreateDir(char *name)
 
 int FileSystem::CreateFatherDir(char *name) 
 {
-    bool error = false;
     int currentSector = this->CurrentDir()->GetCurrentSector();
+    bool error = false;
+   
     if (strcmp(name, "/") == 0) 
     {
         return this->CreateDir(name);
@@ -669,13 +703,13 @@ int FileSystem::MoveToDir(char *name) {
     Directory *currentDir = this->CurrentDir();
     int dirSector = currentDir->Find(name);
     if (dirSector == -1) {
-        printf("Le dossier %s%s n'existe pas\n", CurrentDir()->GetDirName(), name);
+        printf("directory %s isn't exist\n", name);
         delete currentDir;
         return -1;
     }
     int result = MoveToSector(dirSector);
     if (result == -1)
-        printf("%s%s n'est pas un dossier\n", CurrentDir()->GetDirName(), name);
+        printf("%s isn' t a directory\n", name);
     delete currentDir;
     return result;
 }
