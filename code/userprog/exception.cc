@@ -81,13 +81,13 @@ void copyStringFromMachine(int from, char* to, unsigned int size) {
 	to[size+1] = '\0';
 }
 
-void CopyStringInMachineMemory(char *linuxString, char* MipsString, unsigned int size) {
+void CopyStringInMachineMemory(char *linuxString, int MipsPointer, unsigned int size) {
 	unsigned int i = 0;
 	while (linuxString[i] !='\0' && i < size) {
-		machine->WriteMem((unsigned int)(MipsString+i), 1, linuxString[i]);
+		machine->WriteMem(MipsPointer+i, 1, linuxString[i]);
 		i++;
 	}
-	machine->WriteMem((unsigned int)(MipsString+i), 1, '\0');
+	machine->WriteMem(MipsPointer+i, 1, '\0');
 }
 
 void
@@ -132,7 +132,7 @@ ExceptionHandler(ExceptionType which)
 			case SC_GetString: {
 				char buff[MAX_STRING_SIZE];
 				synchconsole->SynchGetString(buff, machine->ReadRegister(5));
-				CopyStringInMachineMemory(buff,(char *)machine->ReadRegister(4), machine->ReadRegister(5));
+				CopyStringInMachineMemory(buff, machine->ReadRegister(4), machine->ReadRegister(5));
 				
 				break;
 			}
